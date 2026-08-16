@@ -18,9 +18,9 @@
 --     2. Một bản ghi có event_date = 08-12 nhưng _ingested_at = 08-15: hôm
 --        08-15, max(event_date) trong bảng đích đang là bao nhiêu? Bản ghi
 --        đó có thoả điều kiện lọc hiện tại không? Ngày hôm sau thì sao?
---     3. Cửa sổ tính lại nên lùi bao nhiêu ngày? Căn cứ vào P99 hay vào max?
+--     3. Window tính lại nên lùi bao nhiêu ngày? Căn cứ vào P99 hay vào max?
 --        Mỗi ngày lùi thêm phải trả giá gì ở MỌI lượt chạy sau này?
---     4. Khi cửa sổ mở rộng, cùng một (event_date, customer_id) sẽ được tính
+--     4. Khi window mở rộng, cùng một (event_date, customer_id) sẽ được tính
 --        lại nhiều lần. Cần thêm gì vào config() để lần tính sau THAY THẾ
 --        lần tính trước thay vì cộng dồn? Grain này có mấy cột khoá?
 --

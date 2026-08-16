@@ -3,7 +3,7 @@
 Vì sao không dựng Kafka/Redpanda thật? Nhiệm vụ 5 chỉ cần MỘT tính chất của
 Kafka: *offset được commit tách rời khỏi việc ghi dữ liệu*. Tính chất đó tái
 hiện đầy đủ bằng một file log + một file offset, mà không bắt cả lớp tải
-300 MB image Docker. Ba khái niệm bên dưới ánh xạ 1-1 sang Kafka thật:
+300 MB image Docker. Ba khái niệm bên dưới map 1-1 sang Kafka thật:
 
     topic    -> file JSONL, mỗi dòng là một message
     offset   -> số dòng đã được ghi nhận là "đã xử lý"

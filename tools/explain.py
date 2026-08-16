@@ -3,7 +3,7 @@
 
     python tools/explain.py                 # đo và in bảng so sánh
     python tools/explain.py --plan          # in thêm cây EXPLAIN ANALYZE
-    python tools/explain.py --save-baseline # ghi mốc "trước khi tối ưu"
+    python tools/explain.py --save-baseline # ghi baseline "trước khi tối ưu"
 
 Ba con số được in ra:
 
@@ -140,16 +140,16 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--plan", action="store_true", help="in cây EXPLAIN ANALYZE")
     ap.add_argument("--save-baseline", action="store_true",
-                    help="ghi mốc 'trước khi tối ưu' (chỉ ghi lần đầu)")
+                    help="ghi baseline 'trước khi tối ưu' (chỉ ghi lần đầu)")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
     os.chdir(ROOT)  # đường dẫn trong dashboard.sql là tương đối với gốc repo
 
     # Kiểm tra TRƯỚC khi đo: mốc đã có thì không đo lại, vì lúc đó
-    # dashboard.sql có thể đã được viết lại và trỏ vào bãi dữ liệu mới.
+    # dashboard.sql có thể đã được viết lại và trỏ vào dataset mới.
     if args.save_baseline and BASELINE_FILE.exists():
-        print(f"  mốc cũ đã tồn tại, không ghi đè: {BASELINE_FILE.name}")
+        print(f"  baseline cũ đã tồn tại, không ghi đè: {BASELINE_FILE.name}")
         return 0
 
     sql = read_query()
@@ -161,7 +161,7 @@ def main() -> int:
                         ("rows_scanned", "rows_on_disk", "files",
                          "result_hash", "result_rows")},
                        indent=2) + "\n", encoding="utf-8")
-        print(f"  đã ghi mốc: rows_scanned={m['rows_scanned']:,} "
+        print(f"  đã ghi baseline: rows_scanned={m['rows_scanned']:,} "
               f"files={m['files']:,} hash={m['result_hash']}")
         return 0
 
@@ -196,7 +196,7 @@ def main() -> int:
         print(f"  {'rows scanned':<16}{'—':>16}{m['rows_scanned']:>16,}")
         print(f"  {'files':<16}{'—':>16}{m['files']:>16,}")
         print(f"  {'result hash':<16}{'—':>16}{m['result_hash']:>16}")
-        print("\n  (chưa có mốc — chạy `make setup` hoặc "
+        print("\n  (chưa có baseline — chạy `make setup` hoặc "
               "`python tools/explain.py --save-baseline`)")
     print()
     print(f"  kết quả truy vấn ({m['result_rows']} hàng):")

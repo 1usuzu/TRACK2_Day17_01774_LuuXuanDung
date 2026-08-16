@@ -19,7 +19,7 @@ help:  ## danh sách lệnh
 	  | awk 'BEGIN {FS = ":.*?## "}; {printf "    \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 
-setup:  ## venv + thư viện + sinh dữ liệu + ghi mốc đo (chạy một lần)
+setup:  ## venv + thư viện + sinh dữ liệu + ghi baseline (chạy một lần)
 	@test -d $(VENV) || python3 -m venv $(VENV)
 	@$(PIP) install -q --upgrade pip
 	@$(PIP) install -q -r requirements.txt

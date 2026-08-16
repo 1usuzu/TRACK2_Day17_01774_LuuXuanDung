@@ -7,7 +7,7 @@
 > [**GUIDE.md**](GUIDE.md) (trình tự thao tác từng nhiệm vụ) ·
 > [**RUBRIC.md**](RUBRIC.md) (thang điểm 100)
 >
-> Khung mã giả của mỗi nhiệm vụ nằm ngay trong file cần sửa, dưới dạng chú
+> Khung pseudo-code của mỗi nhiệm vụ nằm ngay trong file cần sửa, dưới dạng chú
 > thích `KHUNG THỰC HIỆN`.
 
 ---
@@ -62,7 +62,7 @@ Sau lab, bạn phải thực hiện được:
 git clone https://github.com/VinUni-AI20k/Day17-Track2-DataPipeline.git
 cd Day17-Track2-DataPipeline
 
-make setup      # venv + thư viện + sinh 14 ngày dữ liệu + ghi mốc đo
+make setup      # venv + thư viện + sinh 14 ngày dữ liệu + ghi baseline
 make pipeline   # chạy đường ống một lượt
 make verify     # chạy 3 lượt liên tiếp và in bảng đánh giá
 ```
@@ -110,7 +110,7 @@ không. Một bảng có thể **ổn định nhưng vẫn sai** — xem `gold_f
 ├─ dbt/models/gold/            # 3 bảng Gold                       ← nhiệm vụ 1, 2
 ├─ queries/dashboard.sql       # truy vấn của đội CSKH             ← nhiệm vụ 4
 ├─ tools/compact.py            # khung trống, cần hiện thực        ← nhiệm vụ 4
-├─ data/gold_events/           # bãi Parquet 5.000 file            ← nhiệm vụ 4
+├─ data/gold_events/           # dataset Parquet 5.000 file        ← nhiệm vụ 4
 ├─ dags/ai_training_pipeline.py# DAG Airflow — chỉ đọc, không chạy ← nhiệm vụ 1
 ├─ expected/                   # số hàng đúng, dùng để tự kiểm tra
 ├─ tools/verify.py             # make verify
@@ -134,8 +134,7 @@ không. Một bảng có thể **ổn định nhưng vẫn sai** — xem `gold_f
 - Chạy `make pipeline` hai lần, đếm số hàng sau mỗi lần
 - Đọc khối `KHUNG THỰC HIỆN` và `config()` trong
   `dbt/models/gold/gold_training_set.sql`
-- Trong bốn kỹ thuật idempotent ở slide, kỹ thuật nào phù hợp với bảng *thực
-  thể* có bản ghi bị cập nhật (`op='u'`)?
+- Trong bốn kỹ thuật idempotent ở slide, kỹ thuật nào phù hợp với bảng *entity* có bản ghi bị cập nhật (`op='u'`)?
 - Mở `dags/ai_training_pipeline.py` — hai tham số nào khiến thao tác Clear Task
   trở nên rủi ro?
 
@@ -198,7 +197,7 @@ không. Một bảng có thể **ổn định nhưng vẫn sai** — xem `gold_f
 **Cần thu thập trước khi sửa**
 - `make explain` — ghi lại **`rows scanned`**, không ghi thời gian
 - `ls data/gold_events | wc -l` — bao nhiêu file, kích thước trung bình bao nhiêu?
-- Truy vấn lọc theo cột nào? Bãi dữ liệu được phân vùng theo cột nào?
+- Truy vấn lọc theo cột nào? Bãi dữ liệu được partition theo cột nào?
 - `make plan` để xem cây `EXPLAIN ANALYZE`
 
 **Tiêu chí đạt**

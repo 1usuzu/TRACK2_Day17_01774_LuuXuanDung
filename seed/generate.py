@@ -300,7 +300,7 @@ def write_cdc(con: duckdb.DuckDBPyConnection, path: pathlib.Path) -> int:
             elif day >= SCHEMA_CHANGE_DAY:
                 priority = PRIORITY_LABEL[pcode]  # backend đổi sang nhãn chuỗi
             else:
-                priority = pcode  # số nguyên như hợp đồng ban đầu
+                priority = pcode  # số nguyên như contract ban đầu
             rec = {
                 "op": op,
                 "ticket_id": tid,
@@ -355,7 +355,7 @@ def write_transcripts(con: duckdb.DuckDBPyConnection, path: pathlib.Path) -> int
 
 
 def write_small_files(con: duckdb.DuckDBPyConnection, out_dir: pathlib.Path) -> int:
-    """Nhiệm vụ 4: bãi Parquet 5.000 file nhỏ, không phân vùng, thứ tự ngẫu nhiên."""
+    """Nhiệm vụ 4: dataset Parquet 5.000 file nhỏ, không partition, thứ tự ngẫu nhiên."""
     import shutil
 
     shutil.rmtree(out_dir, ignore_errors=True)

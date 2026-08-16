@@ -10,7 +10,7 @@ models:
     columns:
       - name: ticket_id
         data_type: varchar
-        description: "Khoá của thực thể ticket."
+        description: "Khoá của entity ticket."
         tests: [unique, not_null]
       - name: customer_id
         data_type: varchar
@@ -20,7 +20,7 @@ models:
         data_type: varchar
       - name: priority
         data_type: integer
-        description: "1 = urgent … 4 = low. Hợp đồng với team backend."
+        description: "1 = urgent … 4 = low. Contract với team backend."
       - name: category
         data_type: varchar
       - name: channel
@@ -42,7 +42,7 @@ models:
 
   # ---------------------------------------------------------------- events
   - name: silver_events
-    description: "Sự kiện runtime, đã khử trùng lặp theo event_id."
+    description: "Sự kiện runtime, đã dedup theo event_id."
     columns:
       - name: event_id
         tests: [unique, not_null]
@@ -51,7 +51,7 @@ models:
 
   # ----------------------------------------------------------- transcripts
   - name: silver_transcripts
-    description: "Hội thoại, đã khử trùng lặp theo transcript_id."
+    description: "Hội thoại, đã dedup theo transcript_id."
     columns:
       - name: transcript_id
         tests: [unique, not_null]

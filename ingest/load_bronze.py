@@ -7,10 +7,10 @@ Nguyên tắc của tầng Bronze trong lab này:
      phán xét dữ liệu nguồn);
   * chỉ nạp các bản ghi có `_ingested_at` rơi đúng vào ngày vận hành,
     giống hệt một job chạy theo lịch hằng ngày;
-  * idempotent sẵn: xoá phân vùng của ngày rồi nạp lại.
+  * idempotent sẵn: xoá partition của ngày rồi nạp lại.
 
 => Tầng Bronze không chứa lỗi cần sửa. Bốn nhiệm vụ nằm ở tầng Silver, tầng
-   Gold và ở bố cục lưu trữ.
+   Gold và ở storage layout.
 """
 
 from __future__ import annotations
@@ -108,7 +108,7 @@ BRONZE = {
 
 
 def load_day(con: duckdb.DuckDBPyConnection, run_date: str) -> dict[str, int]:
-    """Nạp phân vùng `_ingested_at::date = run_date`. Gọi lại bao nhiêu lần cũng như nhau."""
+    """Nạp partition `_ingested_at::date = run_date`. Gọi lại bao nhiêu lần cũng như nhau."""
     ensure_raw(con)
     out: dict[str, int] = {}
     for bronze, raw in BRONZE.items():
@@ -116,7 +116,7 @@ def load_day(con: duckdb.DuckDBPyConnection, run_date: str) -> dict[str, int]:
             create table if not exists {bronze} as
             select *, DATE '1970-01-01' as _batch_date from {raw} limit 0;
         """)
-        # idempotent: xoá phân vùng cũ trước khi ghi lại
+        # idempotent: xoá partition cũ trước khi ghi lại
         con.execute(f"delete from {bronze} where _batch_date = DATE '{run_date}'")
         con.execute(f"""
             insert into {bronze}

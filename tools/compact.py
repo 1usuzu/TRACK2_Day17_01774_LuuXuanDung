@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Tái cấu trúc bãi Parquet của dashboard — NHIỆM VỤ 4.  CHƯA CÓ LOGIC.
+"""Tái cấu trúc dataset Parquet của dashboard — NHIỆM VỤ 4.  CHƯA CÓ LOGIC.
 
 Hiện trạng: `data/gold_events/` gồm 5.000 file, mỗi file vài chục KB, không
-phân vùng, thứ tự hàng ngẫu nhiên.
+partition, thứ tự hàng ngẫu nhiên.
 
-Yêu cầu: đọc toàn bộ bãi cũ, ghi ra bãi mới có bố cục hợp lý hơn, sau đó cập
-nhật `queries/dashboard.sql` để trỏ vào bãi mới.
+Yêu cầu: đọc toàn bộ dataset cũ, ghi ra dataset mới có layout hợp lý hơn, sau đó cập
+nhật `queries/dashboard.sql` để trỏ vào dataset mới.
 
-    python tools/compact.py       # ghi bãi mới
-    python tools/explain.py       # đo lại và so với mốc
+    python tools/compact.py       # ghi dataset mới
+    python tools/explain.py       # đo lại và so với baseline
 
 KHUNG THỰC HIỆN
 
@@ -18,18 +18,18 @@ KHUNG THỰC HIỆN
         ORDER  BY <cột A>, <cột B>
     ) TO 'data/gold_events_v2' (
         FORMAT          parquet,
-        PARTITION_BY    (<cột phân vùng>),
+        PARTITION_BY    (<cột partition>),
         OVERWRITE_OR_IGNORE,
         ROW_GROUP_SIZE  <?>
     )
 
 Ba quyết định, mỗi quyết định cần một lý do viết được ra giấy:
 
-  <cột phân vùng>   Engine chỉ bỏ qua được file mà nó biết là vô ích TRƯỚC khi
+  <cột partition>   Engine chỉ bỏ qua được file mà nó biết là vô ích TRƯỚC khi
                     mở file. Thông tin đó đến từ đường dẫn. Vậy cột nào của
                     truy vấn dashboard nên xuất hiện trong tên thư mục? Cột đó
                     có bao nhiêu giá trị phân biệt — tức bao nhiêu thư mục?
-                    Phân vùng theo cột có 650 giá trị thì hệ quả là gì?
+                    Partition theo cột có 650 giá trị thì hệ quả là gì?
 
   <cột A>, <cột B>  Thứ tự hàng trong file quyết định thống kê min/max của mỗi
                     row group có ích hay vô dụng. Sắp thế nào để các hàng cùng
@@ -79,7 +79,7 @@ def main() -> int:
     #
     # Sau đó kiểm tra không mất hàng nào:
     #
-    #   assert <số hàng bãi cũ> == <số hàng bãi mới>
+    #   assert <số row dataset cũ> == <số row dataset mới>
 
     print("\n  tools/compact.py chưa được hiện thực — đây là nhiệm vụ 4.")
     print("  Mở file này, đọc phần KHUNG THỰC HIỆN ở đầu file và điền vào TODO.")

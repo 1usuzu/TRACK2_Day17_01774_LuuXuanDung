@@ -1,4 +1,4 @@
--- Gold: chunk văn bản để nạp vào chỉ mục RAG.
+-- Gold: chunk văn bản để nạp vào index RAG.
 -- Grain: MỘT hàng cho MỘT chunk.
 --
 -- Model này materialized = 'table' (dựng lại toàn bộ mỗi lần chạy).

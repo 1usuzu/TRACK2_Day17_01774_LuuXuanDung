@@ -133,7 +133,7 @@ def dashboard_check() -> dict:
         os.chdir(cwd)
     base = load_baseline()
     if not base:
-        return {"ok": False, "note": "chưa có mốc — chạy make setup", **m}
+        return {"ok": False, "note": "chưa có baseline — chạy make setup", **m}
     target = base["rows_scanned"] // TARGET_FACTOR
     return {
         "ok": m["rows_scanned"] <= target and m["result_hash"] == base["result_hash"],

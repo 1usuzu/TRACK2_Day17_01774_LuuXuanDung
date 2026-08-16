@@ -5,7 +5,7 @@ models:
     description: "Tập huấn luyện cho mô hình phân loại ticket. Grain: 1 hàng / 1 ticket."
     columns:
       - name: ticket_id
-        description: "Khoá thực thể."
+        description: "Khoá entity."
 
   - name: gold_feature_daily
     description: "Đặc trưng theo ngày cho agent định tuyến. Grain: (event_date, customer_id)."
@@ -14,7 +14,7 @@ models:
       - name: customer_id
 
   - name: gold_doc_chunks
-    description: "Chunk văn bản cho chỉ mục RAG. Grain: 1 hàng / 1 chunk."
+    description: "Chunk văn bản cho index RAG. Grain: 1 hàng / 1 chunk."
     columns:
       - name: chunk_id
         tests: [unique, not_null]

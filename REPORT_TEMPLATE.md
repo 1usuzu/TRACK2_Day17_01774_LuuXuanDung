@@ -70,7 +70,7 @@ pipeline dừng khi gặp bản ghi lỗi?
 |---|---|
 | **Triệu chứng** | |
 | **Nguyên nhân** | |
-| **Cách khắc phục** | *(bố cục lưu trữ + truy vấn)* |
+| **Cách khắc phục** | *(storage layout + truy vấn)* |
 
 | Chỉ số | Trước | Sau | Tỷ lệ |
 |---|---|---|---|

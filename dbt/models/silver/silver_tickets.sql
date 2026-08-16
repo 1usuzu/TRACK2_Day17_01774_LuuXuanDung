@@ -7,7 +7,7 @@
 --
 -- KHUNG THỰC HIỆN — NHIỆM VỤ 3
 --
---   Cột `priority` được hợp đồng hoá là số nguyên trong miền 1..4. Hãy đối
+--   Cột `priority` được contract quy định là số nguyên trong miền 1..4. Hãy đối
 --   chiếu phân bố giá trị ở Bronze với phân bố ở Silver trước khi sửa:
 --
 --       SELECT priority_raw, count(*) FROM bronze_tickets_cdc GROUP BY 1;
@@ -17,17 +17,17 @@
 --   nhau. Xác định ba nhóm đó, rồi thiết kế biểu thức chuẩn hoá:
 --
 --       normalize_priority(raw) := CASE
---           WHEN <nhóm 1: đã đúng hợp đồng>   THEN <giữ nguyên>
---           WHEN <nhóm 2: đổi cách biểu diễn> THEN <ánh xạ về miền hợp lệ>
---           ELSE NULL   -- NULL = "không hợp lệ", tín hiệu để cách ly
+--           WHEN <nhóm 1: đã đúng contract>   THEN <giữ nguyên>
+--           WHEN <nhóm 2: đổi cách biểu diễn> THEN <map về miền hợp lệ>
+--           ELSE NULL   -- NULL = "không hợp lệ", tín hiệu để quarantine
 --       END
 --
 --   Thứ tự hai bước dưới đây quyết định số hàng của bảng:
 --       (1) loại bỏ bản ghi CDC không chuẩn hoá được
 --       (2) SAU ĐÓ mới xếp hạng để lấy bản ghi mới nhất của mỗi ticket
 --   Làm ngược lại thì ticket có bản ghi mới nhất bị lỗi sẽ biến mất khỏi
---   Silver, kéo theo gold_training_set thiếu hàng. Cách ly BẢN GHI, không
---   cách ly TICKET.
+--   Silver, kéo theo gold_training_set thiếu hàng. Quarantine BẢN GHI, không
+--   quarantine TICKET.
 --
 --   Biểu thức chuẩn hoá nên viết MỘT LẦN dùng chung (macro trong dbt/macros/
 --   hoặc một CTE), vì quarantine_tickets phải dùng đúng định nghĩa đó. Hai

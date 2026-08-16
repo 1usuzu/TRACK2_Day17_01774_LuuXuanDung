@@ -64,7 +64,7 @@ sai lệch không đo được là một sai lệch không kiểm soát được
 | `quarantine_tickets` đúng **312** hàng, đúng grain (1 hàng / 1 bản ghi CDC) | 4 |
 | `silver_tickets.priority` không NULL và luôn ∈ 1..4 | 3 |
 
-**Trừ trong mục C:** `quarantine_tickets` vượt 1.000 hàng — dấu hiệu đã cách ly
+**Trừ trong mục C:** `quarantine_tickets` vượt 1.000 hàng — dấu hiệu đã quarantine
 nhầm nhóm nhãn chuỗi hợp lệ — mất toàn bộ 4 điểm của hạng mục quarantine, kể cả
 khi `dbt test` pass.
 

@@ -12,13 +12,13 @@
 --       incremental_strategy = <chưa khai>
 --
 --   Câu hỏi cần trả lời trước khi sửa:
---     1. Grain của bảng này là thực thể hay sự kiện? Khoá tự nhiên là gì?
+--     1. Grain của bảng này là entity hay sự kiện? Khoá tự nhiên là gì?
 --     2. Khi không có unique_key, dbt sinh ra câu lệnh ghi nào? Chạy lại
 --        cùng một ngày lần thứ hai thì hàng cũ bị THAY THẾ hay bị GHI THÊM?
 --     3. Nguồn CDC có bản ghi op='u'. Một ticket được tạo ngày D1 và bị sửa
 --        ngày D2 sẽ đi qua mệnh đề WHERE bên dưới mấy lần trong MỘT lượt chạy?
 --     4. Với dữ liệu như vậy, chiến lược nào phù hợp: 'append',
---        'delete+insert' theo phân vùng ngày, hay 'merge' theo khoá?
+--        'delete+insert' theo partition ngày, hay 'merge' theo khoá?
 --
 --   Lưu ý: mệnh đề WHERE theo run_date bên dưới KHÔNG phải lỗi. Nó tồn tại để
 --   backfill một ngày không phải quét lại toàn bộ lịch sử. Giữ nguyên nó.
@@ -46,7 +46,7 @@ select
 from {{ ref('silver_tickets') }}
 
 {% if is_incremental() %}
--- Chỉ xử lý phân vùng của ngày vận hành hiện tại.
+-- Chỉ xử lý partition của ngày vận hành hiện tại.
 where _ingested_at >= TIMESTAMP '{{ var("run_date") }} 00:00:00'
   and _ingested_at <  TIMESTAMP '{{ var("run_date") }} 00:00:00' + interval 1 day
 {% endif %}

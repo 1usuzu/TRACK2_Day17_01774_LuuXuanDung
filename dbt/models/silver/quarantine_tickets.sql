@@ -1,7 +1,7 @@
 -- ---------------------------------------------------------------------------
 -- quarantine_tickets — NHIỆM VỤ 3.  TRẠNG THÁI: KHUNG RỖNG, CHƯA CÓ LOGIC.
 -- ---------------------------------------------------------------------------
--- Mục đích: tiếp nhận các bản ghi CDC không thoả hợp đồng dữ liệu, để pipeline
+-- Mục đích: tiếp nhận các bản ghi CDC không thoả data contract, để pipeline
 -- tiếp tục chạy thay vì dừng, và để người trực có một hàng đợi cần xử lý.
 --
 -- Yêu cầu:
