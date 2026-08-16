@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: >
+      Tầng Bronze do ingest/load_bronze.py ghi vào kho DuckDB.
+      Bronze giữ nguyên payload gốc — cột `priority_raw` là VARCHAR vì
+      nguồn có lúc gửi số, có lúc gửi nhãn chuỗi.
+    schema: main
+    tables:
+      - name: bronze_tickets_cdc
+        description: "CDC từ Postgres. op = c (create) / u (update) / d (delete)."
+      - name: bronze_events
+        description: "Sự kiện runtime của agent, đọc từ topic `ai-events`."
+      - name: bronze_transcripts
+        description: "Bản ghi hội thoại dạng JSON trên S3."

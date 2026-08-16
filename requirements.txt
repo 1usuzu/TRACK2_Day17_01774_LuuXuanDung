@@ -1,0 +1,5 @@
+# LAB 17 — Data Pipeline Engineering
+# Toàn bộ lab chạy local, không cần Docker, không cần cloud.
+duckdb>=1.4,<2
+dbt-core>=1.9,<2
+dbt-duckdb>=1.9,<2

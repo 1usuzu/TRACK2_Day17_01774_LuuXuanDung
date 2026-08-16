@@ -1,0 +1,7 @@
+{
+  "gold_training_set": 12480,
+  "gold_feature_daily": 9100,
+  "gold_doc_chunks": 31200,
+  "quarantine_tickets": 312,
+  "_note": "Số hàng đúng của từng bảng Gold sau khi sửa hết bốn nhiệm vụ."
+}

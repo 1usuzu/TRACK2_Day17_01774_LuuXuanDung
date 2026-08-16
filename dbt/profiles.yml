@@ -1,0 +1,10 @@
+lab17:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Makefile / run_pipeline.py luôn export LAB17_DB = <repo>/warehouse.duckdb
+      path: "{{ env_var('LAB17_DB', '../warehouse.duckdb') }}"
+      threads: 4
+      retries:
+        query_attempts: 3

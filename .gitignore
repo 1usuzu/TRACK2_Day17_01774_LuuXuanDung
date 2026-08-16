@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+
+# kho dữ liệu và seed đều được sinh lại bằng `make setup`
+warehouse.duckdb
+warehouse.duckdb.wal
+seed/*.jsonl
+data/
+verify_result.json
+.explain_profile.json
+
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+logs/

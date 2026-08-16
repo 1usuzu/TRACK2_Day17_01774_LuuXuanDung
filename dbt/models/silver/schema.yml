@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  # --------------------------------------------------------------- tickets
+  - name: silver_tickets
+    description: "Trạng thái mới nhất của mỗi ticket, dựng từ CDC."
+    config:
+      contract:
+        enforced: false # <- trạng thái hiện tại của repo
+    columns:
+      - name: ticket_id
+        data_type: varchar
+        description: "Khoá của thực thể ticket."
+        tests: [unique, not_null]
+      - name: customer_id
+        data_type: varchar
+      - name: customer_name
+        data_type: varchar
+      - name: segment
+        data_type: varchar
+      - name: priority
+        data_type: integer
+        description: "1 = urgent … 4 = low. Hợp đồng với team backend."
+      - name: category
+        data_type: varchar
+      - name: channel
+        data_type: varchar
+      - name: status
+        data_type: varchar
+      - name: csat
+        data_type: integer
+      - name: first_response_sec
+        data_type: integer
+      - name: subject
+        data_type: varchar
+      - name: body
+        data_type: varchar
+      - name: updated_at
+        data_type: timestamp
+      - name: _ingested_at
+        data_type: timestamp
+
+  # ---------------------------------------------------------------- events
+  - name: silver_events
+    description: "Sự kiện runtime, đã khử trùng lặp theo event_id."
+    columns:
+      - name: event_id
+        tests: [unique, not_null]
+      - name: event_date
+        tests: [not_null]
+
+  # ----------------------------------------------------------- transcripts
+  - name: silver_transcripts
+    description: "Hội thoại, đã khử trùng lặp theo transcript_id."
+    columns:
+      - name: transcript_id
+        tests: [unique, not_null]

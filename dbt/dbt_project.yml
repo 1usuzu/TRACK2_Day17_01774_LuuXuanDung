@@ -1,0 +1,24 @@
+name: lab17
+version: "1.0.0"
+config-version: 2
+profile: lab17
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+flags:
+  send_anonymous_usage_stats: false
+  require_explicit_package_overrides_for_builtin_materializations: true
+  source_freshness_run_project_hooks: false
+
+# `run_date` = ngày vận hành đang được xử lý. tools/run_pipeline.py truyền
+# giá trị thật vào qua --vars; giá trị dưới đây chỉ là mặc định khi bạn gõ
+# `dbt run` bằng tay.
+vars:
+  run_date: "2026-08-03"
+
+models:
+  lab17:
+    silver:
+      +materialized: table
