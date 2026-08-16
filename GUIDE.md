@@ -174,7 +174,7 @@ select
     quantile_cont(date_diff('second', event_time, _ingested_at)/86400.0, 0.95) as p95_ngay,
     quantile_cont(date_diff('second', event_time, _ingested_at)/86400.0, 0.99) as p99_ngay,
     max(date_diff('second', event_time, _ingested_at)/86400.0)                 as max_ngay,
-    avg(case when _ingested_at::date > event_time::date then 1.0 else 0 end)   as ty_le_late
+    avg(case when _ingested_at > event_time + interval 1 day then 1.0 else 0 end)   as ty_le_late
 from bronze_events;
 ```
 
