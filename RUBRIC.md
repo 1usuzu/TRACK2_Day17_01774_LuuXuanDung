@@ -19,7 +19,7 @@ make crash-test    # thưởng
 | **B** | Tính đúng — số hàng ba bảng Gold khớp `expected/` | **30** |
 | **C** | Chất lượng dữ liệu — contract, test, quarantine | **15** |
 | **D** | Hiệu năng — `rows scanned` giảm ≥ 10× có bằng chứng | **15** |
-| **E** | Báo cáo — nêu đúng **nguyên nhân gốc** | **10** |
+| **E** | Báo cáo — nêu đúng **nguyên nhân** | **10** |
 | **+** | *(thưởng)* Nhiệm vụ 5 đạt | **+5** |
 | — | *(trừ)* xem mục "Trừ điểm" | **−** |
 
@@ -35,7 +35,7 @@ Nguồn: cột `ỔN ĐỊNH` và bảng `CHECKSUM từng lượt` của `make v
 |---|---|
 | `gold_training_set` cho cùng checksum ở cả ba lượt | 12 |
 | `gold_feature_daily` cho cùng checksum ở cả ba lượt | 12 |
-| `gold_doc_chunks` cho cùng checksum ở cả ba lượt *(nhóm đối chứng — hỏng nghĩa là bạn đã phá thứ vốn đang chạy tốt)* | 3 |
+| `gold_doc_chunks` cho cùng checksum ở cả ba lượt *(nhóm đối chứng: sai lệch ở bảng này nghĩa là một thành phần vốn hoạt động đúng đã bị ảnh hưởng)* | 3 |
 | `quarantine_tickets` cho cùng checksum ở cả ba lượt | 3 |
 
 > Điểm mục A **không** phụ thuộc số hàng có đúng hay không. Một bảng có thể ổn
@@ -52,8 +52,8 @@ Nguồn: cột `SỐ HÀNG` so với `expected/`.
 | `gold_doc_chunks` | 31.200 | 3 |
 | `gold_training_set`: 1 hàng / 1 `ticket_id` (không lặp) | — | 3 |
 
-Sai một hàng cũng là sai. Không có điểm từng phần cho "gần đúng" — vì trong
-thực tế không ai biết "gần đúng" là gần bao nhiêu.
+Không có điểm từng phần cho kết quả xấp xỉ: trong vận hành thực tế, một
+sai lệch không đo được là một sai lệch không kiểm soát được.
 
 ## C · Chất lượng dữ liệu — 15 điểm
 
@@ -64,8 +64,9 @@ thực tế không ai biết "gần đúng" là gần bao nhiêu.
 | `quarantine_tickets` đúng **312** hàng, đúng grain (1 hàng / 1 bản ghi CDC) | 4 |
 | `silver_tickets.priority` không NULL và luôn ∈ 1..4 | 3 |
 
-**Trừ trong mục C:** quarantine > 1.000 hàng (đã cách ly nhầm nhãn chuỗi hợp lệ)
-→ mất toàn bộ 4 điểm của dòng quarantine, dù `dbt test` có pass.
+**Trừ trong mục C:** `quarantine_tickets` vượt 1.000 hàng — dấu hiệu đã cách ly
+nhầm nhóm nhãn chuỗi hợp lệ — mất toàn bộ 4 điểm của hạng mục quarantine, kể cả
+khi `dbt test` pass.
 
 ## D · Hiệu năng — 15 điểm
 
@@ -74,20 +75,21 @@ Nguồn: `make explain` (đã so sẵn với mốc trong `expected/dashboard_bas
 | | Điểm |
 |---|---|
 | `rows scanned` giảm ≥ 10× | 6 |
-| `result hash` không đổi *(nhanh mà sai thì bằng không)* | 4 |
+| `result hash` không đổi *(tối ưu làm đổi kết quả thì không được tính)* | 4 |
 | Số file giảm rõ rệt (compaction thật, không chỉ đổi truy vấn) | 3 |
 | Báo cáo có số **trước/sau** của `rows scanned`, không phải số giây | 2 |
 
-> Nếu `result hash` đổi, **cả mục D = 0**. Tối ưu mà đổi kết quả không phải
-> tối ưu.
+> Nếu `result hash` thay đổi, **toàn bộ mục D = 0**. Một truy vấn nhanh hơn
+> nhưng trả kết quả khác là một truy vấn khác, không phải một truy vấn đã
+> được tối ưu.
 
 ## E · Báo cáo — 10 điểm
 
-Mỗi nhiệm vụ 1–4 được **2,5 điểm**, chấm theo dòng **Nguyên nhân gốc**:
+Mỗi nhiệm vụ 1–4 được **2,5 điểm**, chấm theo mục **Nguyên nhân**:
 
 | Chất lượng | Điểm/nhiệm vụ |
 |---|---|
-| Nêu đúng **cơ chế** gây lỗi, cụ thể tới mức người khác đọc là tránh được lần sau | 2,5 |
+| Nêu đúng **cơ chế** gây lỗi, đủ cụ thể để người đọc phòng tránh được trường hợp tương tự | 2,5 |
 | Đúng nhưng chung chung ("model cấu hình sai") | 1,5 |
 | Chỉ mô tả cách sửa ("tôi đổi một tham số trong `config()`") | 0,5 |
 | Không có / sai | 0 |
@@ -125,7 +127,7 @@ at-most-once / at-least-once / idempotent write.
 
 | | |
 |---|---|
-| Sửa `expected/`, `tools/verify.py`, `tools/explain.py` hoặc `seed/generate.py` để "qua bài" | **0 điểm toàn bài** |
+| Sửa `expected/`, `tools/verify.py`, `tools/explain.py` hoặc `seed/generate.py` để đạt tiêu chí | **0 điểm toàn bài** |
 | Xoá bớt dữ liệu nguồn cho số hàng khớp | **0 điểm toàn bài** |
 | Nộp kèm `.venv/`, `warehouse.duckdb`, `data/` (không chạy `make clean`) | −3 |
 | `make verify` không chạy được trên repo nộp (thiếu file, lỗi import) | −10 |

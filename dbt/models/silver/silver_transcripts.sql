@@ -1,4 +1,4 @@
--- Silver: hội thoại đã khử trùng lặp. Model này không có mìn.
+-- Silver: hội thoại đã khử trùng lặp. Model này không chứa lỗi cần sửa.
 
 {{ config(materialized = 'table') }}
 

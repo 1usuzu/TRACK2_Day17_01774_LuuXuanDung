@@ -2,7 +2,9 @@
 -- Grain: MỘT hàng cho MỘT chunk.
 --
 -- Model này materialized = 'table' (dựng lại toàn bộ mỗi lần chạy).
--- Nó KHÔNG có mìn — hãy dùng nó làm nhóm đối chứng: chạy ba lần vẫn y hệt.
+-- Model này không chứa lỗi cần sửa; dùng làm nhóm đối chứng: ba lượt chạy
+-- phải cho cùng một checksum. Nếu nó sai lệch, thay đổi của bạn đã tác động
+-- ra ngoài phạm vi nhiệm vụ.
 
 {{ config(materialized = 'table') }}
 

@@ -8,8 +8,33 @@ Chạy tay:
 Kịch bản sự cố (tools/crash_test.py tự lo):
     thêm --crash-at-batch 7  -> tiến trình tự chết ở lô thứ 7, y hệt kill -9.
 
-Đọc kỹ hàm consume(). Chỉ ba dòng trong "vùng được phép sắp xếp lại" là
-đáng quan tâm, cộng với cách write_batch() ghi dữ liệu.
+KHUNG THỰC HIỆN — NHIỆM VỤ 5
+
+  Chạy `make crash-test` trước. Đọc kết quả: bạn MẤT bản ghi hay bạn có bản
+  ghi TRÙNG? Con số đó xác định consumer đang ở ngữ nghĩa nào.
+
+      at-most-once   : commit offset TRƯỚC khi ghi  -> crash = mất dữ liệu
+      at-least-once  : commit offset SAU khi ghi    -> crash = trùng dữ liệu
+      exactly-once   : không tồn tại ở tầng giao vận
+
+  Hai hạng mục cần xử lý, thiếu một là chưa đủ:
+
+    (a) Thứ tự thao tác trong consume() — xem khối được đánh dấu bên dưới.
+        Đổi thứ tự chuyển ngữ nghĩa từ nhóm này sang nhóm kia. Câu hỏi: nếu
+        tiến trình chết ở điểm maybe_crash(), lô hiện tại đã được ghi chưa,
+        offset đã dịch chưa, và lần khởi động lại sẽ đọc từ đâu?
+
+    (b) Tính idempotent của write_batch() — đổi thứ tự ở (a) khiến một số lô
+        được phát lại. Với câu lệnh INSERT hiện tại, phát lại nghĩa là gì?
+
+            INSERT INTO <bảng> VALUES (...)
+            ON CONFLICT (<cột khoá>) DO <UPDATE ... | NOTHING>
+
+        DuckDB chỉ chấp nhận mệnh đề ON CONFLICT khi cột khoá có ràng buộc
+        PRIMARY KEY hoặc UNIQUE — xem hằng DDL ngay bên dưới.
+
+        Câu hỏi cho báo cáo: DO UPDATE và DO NOTHING khác nhau ở đâu khi một
+        message được phát lại với nội dung ĐÃ ĐỔI? Bạn chọn cái nào, vì sao?
 """
 
 from __future__ import annotations
@@ -41,7 +66,11 @@ create table if not exists {TABLE} (
 
 
 def write_batch(con: duckdb.DuckDBPyConnection, batch: list[dict]) -> None:
-    """Ghi một lô message xuống kho."""
+    """Ghi một lô message xuống kho — nhiệm vụ 5, hạng mục (b).
+
+    Câu lệnh hiện tại là INSERT thuần: ghi lại cùng một event_id sẽ tạo thêm
+    một hàng mới. Xem khung mã giả ở đầu file.
+    """
     con.executemany(
         f"insert into {TABLE} values (?, ?, ?, ?, ?, ?, ?, ?)",
         [
@@ -80,10 +109,12 @@ def consume(
                 break
             batch_no += 1
 
-            # ── vùng bạn được phép sắp xếp lại ────────────────────────────
-            consumer.commit()                 # (1) ghi nhận offset
-            maybe_crash(batch_no, crash_at)   # (2) sự cố có thể xảy ra ở đây
-            write_batch(con, batch)           # (3) ghi dữ liệu
+            # ── KHỐI CẦN XEM XÉT — nhiệm vụ 5, hạng mục (a) ───────────────
+            # Ba dòng dưới đây được phép sắp xếp lại. maybe_crash() mô phỏng
+            # `kill -9`: tiến trình chết ngay tại vị trí của nó, không rollback.
+            consumer.commit()                 # ghi nhận offset
+            maybe_crash(batch_no, crash_at)   # sự cố xảy ra tại đây
+            write_batch(con, batch)           # ghi dữ liệu
             # ─────────────────────────────────────────────────────────────
 
             written += len(batch)

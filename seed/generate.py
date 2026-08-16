@@ -45,7 +45,7 @@ N_LATE_ONLY_COMBOS = 455  # (ngày, khách) chỉ có dữ liệu về muộn ->
 LATE_RATE_PER_MILLE = 25  # thêm 2,5% bản ghi lẻ về muộn
 LAST_LATE_DAY_IDX = 10  # 2026-08-13: sau ngày này không sinh dữ liệu muộn
 
-N_GOLD_EVENT_FILES = 5_000  # mìn 4: thư mục 5.000 file nhỏ
+N_GOLD_EVENT_FILES = 5_000  # nhiệm vụ 4: thư mục gồm 5.000 file nhỏ
 
 PRIORITY_LABEL = {1: "urgent", 2: "high", 3: "medium", 4: "low"}
 BAD_PRIORITY_VALUES = ["P1", "P2", "0", "5", "-1", "", None, "unknown"]
@@ -355,7 +355,7 @@ def write_transcripts(con: duckdb.DuckDBPyConnection, path: pathlib.Path) -> int
 
 
 def write_small_files(con: duckdb.DuckDBPyConnection, out_dir: pathlib.Path) -> int:
-    """Mìn 4: bãi Parquet 5.000 file nhỏ, không phân vùng, thứ tự ngẫu nhiên."""
+    """Nhiệm vụ 4: bãi Parquet 5.000 file nhỏ, không phân vùng, thứ tự ngẫu nhiên."""
     import shutil
 
     shutil.rmtree(out_dir, ignore_errors=True)

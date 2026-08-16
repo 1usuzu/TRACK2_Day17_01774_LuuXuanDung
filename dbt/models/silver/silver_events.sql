@@ -1,6 +1,6 @@
 -- Silver: sự kiện runtime đã khử trùng lặp theo event_id.
--- Model này không có mìn — nhưng hai cột `event_time` và `_ingested_at`
--- ở đây là chỗ bạn sẽ cần cho nhiệm vụ 2.
+-- Model này không chứa lỗi cần sửa. Tuy vậy hai cột `event_time` và
+-- `_ingested_at` ở đây là dữ liệu đầu vào cho phép đo của nhiệm vụ 2.
 
 {{ config(materialized = 'table') }}
 

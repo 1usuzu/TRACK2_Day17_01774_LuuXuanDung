@@ -69,8 +69,11 @@ def checksum(con: duckdb.DuckDBPyConnection, name: str) -> str | None:
     if not cols:
         return "no-key-columns"
     expr = " || '|' || ".join(f"coalesce(\"{c}\"::varchar, '~')" for c in cols)
+    # Bảng rỗng vẫn phải có checksum xác định, nếu không thì một model khung
+    # (0 hàng) sẽ bị báo là "không ổn định" trong khi nó hoàn toàn ổn định.
     return con.execute(
-        f'select md5(string_agg({expr}, chr(10) order by {expr})) from "{name}"'
+        f'select coalesce(md5(string_agg({expr}, chr(10) order by {expr})), '
+        f"'empty') from \"{name}\""
     ).fetchone()[0]
 
 

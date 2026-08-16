@@ -9,7 +9,8 @@ Nguyên tắc của tầng Bronze trong lab này:
     giống hệt một job chạy theo lịch hằng ngày;
   * idempotent sẵn: xoá phân vùng của ngày rồi nạp lại.
 
-=> Bronze KHÔNG phải nơi có mìn. Bốn nhiệm vụ nằm ở Silver / Gold / storage.
+=> Tầng Bronze không chứa lỗi cần sửa. Bốn nhiệm vụ nằm ở tầng Silver, tầng
+   Gold và ở bố cục lưu trữ.
 """
 
 from __future__ import annotations
