@@ -4,9 +4,9 @@ Phần lớn điểm được chấm **tự động** bằng `make verify`, `mak
 `make crash-test`. Phần còn lại chấm bằng mắt trên báo cáo.
 
 ```bash
-make verify        # A + B + C  (và phần lớn của D)
-make explain       # D
-make crash-test    # thưởng
+make verify        # A + B + C
+make explain       # bài mở rộng A (cần make seed-extra)
+make crash-test    # bài mở rộng B
 ```
 
 ---
@@ -17,13 +17,12 @@ make crash-test    # thưởng
 |---|---|---|
 | **A** | Tính ổn định — chạy ba lần ra checksum giống hệt nhau | **30** |
 | **B** | Tính đúng — số hàng ba bảng Gold khớp `expected/` | **30** |
-| **C** | Chất lượng dữ liệu — contract, test, quarantine | **15** |
-| **D** | Hiệu năng — `rows scanned` giảm ≥ 10× có bằng chứng | **15** |
-| **E** | Báo cáo — nêu đúng **nguyên nhân** | **10** |
-| **+** | *(thưởng)* Nhiệm vụ 5 đạt | **+5** |
+| **C** | Chất lượng dữ liệu — contract, test, quarantine | **20** |
+| **D** | Báo cáo — nêu đúng **nguyên nhân** | **20** |
+| **+** | *(thưởng)* mỗi bài trong `EXTRA.md` | **+5** |
 | — | *(trừ)* xem mục "Trừ điểm" | **−** |
 
-Tối đa **105/100**.
+Tối đa **110/100**.
 
 ---
 
@@ -55,71 +54,53 @@ Nguồn: cột `SỐ HÀNG` so với `expected/`.
 Không có điểm từng phần cho kết quả xấp xỉ: trong vận hành thực tế, một
 sai lệch không đo được là một sai lệch không kiểm soát được.
 
-## C · Chất lượng dữ liệu — 15 điểm
+## C · Chất lượng dữ liệu — 20 điểm
 
 | | Điểm |
 |---|---|
-| `contract: enforced: true` trên `silver_tickets` và `dbt run` vẫn chạy | 4 |
-| `dbt test` pass **và** có thêm test mới so với bản gốc (bản gốc có 9 test) | 4 |
-| `quarantine_tickets` đúng **312** hàng, đúng grain (1 hàng / 1 bản ghi CDC) | 4 |
+| `contract: enforced: true` trên `silver_tickets` và `dbt run` vẫn chạy | 5 |
+| `dbt test` pass **và** có thêm test mới so với bản gốc (bản gốc có 9 test) | 5 |
+| `quarantine_tickets` đúng **312** hàng, đúng grain (1 hàng / 1 bản ghi CDC) | 5 |
 | `silver_tickets.priority` không NULL và luôn ∈ 1..4 | 3 |
+| `silver_tickets` vẫn đủ **12.480** ticket *(loại bản ghi, không loại ticket)* | 2 |
 
 **Trừ trong mục C:** `quarantine_tickets` vượt 1.000 hàng — dấu hiệu đã quarantine
 nhầm nhóm nhãn chuỗi hợp lệ — mất toàn bộ 4 điểm của hạng mục quarantine, kể cả
 khi `dbt test` pass.
 
-## D · Hiệu năng — 15 điểm
+## D · Báo cáo — 20 điểm
 
-Nguồn: `make explain` (đã so sẵn với mốc trong `expected/dashboard_baseline.json`).
-
-| | Điểm |
-|---|---|
-| `rows scanned` giảm ≥ 10× | 6 |
-| `result hash` không đổi *(tối ưu làm đổi kết quả thì không được tính)* | 4 |
-| Số file giảm rõ rệt (compaction thật, không chỉ đổi truy vấn) | 3 |
-| Báo cáo có số **trước/sau** của `rows scanned`, không phải số giây | 2 |
-
-> Nếu `result hash` thay đổi, **toàn bộ mục D = 0**. Một truy vấn nhanh hơn
-> nhưng trả kết quả khác là một truy vấn khác, không phải một truy vấn đã
-> được tối ưu.
-
-## E · Báo cáo — 10 điểm
-
-Mỗi nhiệm vụ 1–4 được **2,5 điểm**, chấm theo mục **Nguyên nhân**:
+Ba nhiệm vụ, mỗi nhiệm vụ **6 điểm** cho mục **Nguyên nhân**, cộng **2 điểm**
+cho con số P99 ở nhiệm vụ 2.
 
 | Chất lượng | Điểm/nhiệm vụ |
 |---|---|
-| Nêu đúng **cơ chế** gây lỗi, đủ cụ thể để người đọc phòng tránh được trường hợp tương tự | 2,5 |
-| Đúng nhưng chung chung ("model cấu hình sai") | 1,5 |
-| Chỉ mô tả cách sửa ("tôi đổi một tham số trong `config()`") | 0,5 |
+| Nêu đúng **cơ chế** gây lỗi, đủ cụ thể để người đọc phòng tránh được trường hợp tương tự | 6 |
+| Đúng nhưng chung chung ("model cấu hình sai") | 3 |
+| Chỉ mô tả cách sửa ("tôi đổi một tham số trong `config()`") | 1 |
 | Không có / sai | 0 |
-
-Hai con số **bắt buộc** phải xuất hiện trong báo cáo:
-- **P99 độ trễ** đo được (nhiệm vụ 2) — thiếu: −1 điểm
-- **`rows scanned` trước/sau** (nhiệm vụ 4) — thiếu: −1 điểm
 
 Ví dụ so sánh — lấy một sự cố **không** có trong lab này, để bạn thấy khác biệt
 mà không bị lộ đáp án: *"job gửi email nhắc hạn gửi trùng cho một số khách"*.
 
-> ✗ *0,5đ* — "Tôi thêm một bảng `sent_log` và kiểm tra trước khi gửi."
+> ✗ *1đ* — "Tôi thêm một bảng `sent_log` và kiểm tra trước khi gửi."
 >
 > Đây là **cách sửa**. Người đọc không học được gì: lần sau gặp job khác họ
 > vẫn mắc lại.
 >
-> ✓ *2,5đ* — "Job quét theo `where due_date = today` rồi gửi, nhưng không ghi
+> ✓ *6đ* — "Job quét theo `where due_date = today` rồi gửi, nhưng không ghi
 > lại dấu vết là đã gửi. Retry của scheduler khi timeout mạng vì thế là một
 > lần gửi mới hoàn toàn — bản thân hành động gửi không idempotent, nên **mọi**
-> cơ chế retry ở tầng trên đều biến thành cơ chế nhân bản. Sửa bằng cách gắn
-> khoá tự nhiên (`customer_id`, `due_date`) cho mỗi lần gửi và kiểm tra khoá
-> đó trước khi gọi API."
->
-> Khác biệt: bản ✓ nói được **vì sao** lỗi xảy ra và **điều kiện nào** làm nó
-> tái diễn. Bản ✗ chỉ kể đã gõ gì.
+> cơ chế retry ở tầng trên đều biến thành cơ chế nhân bản."
 
-## + · Thưởng — 5 điểm
+## + · Thưởng — mỗi bài 5 điểm
 
-`make crash-test` báo `NHIỆM VỤ 5: ĐẠT ✓` **và** báo cáo giải thích được
-at-most-once / at-least-once / idempotent write.
+Hai bài trong [EXTRA.md](EXTRA.md), cần chạy `make seed-extra` trước:
+
+| | Điểm |
+|---|---|
+| **Bài A** — `rows scanned` giảm ≥ 10×, `result hash` không đổi, số file giảm | +5 |
+| **Bài B** — `make crash-test` đạt, báo cáo giải thích được at-most-once / at-least-once / idempotent write | +5 |
 
 ---
 
@@ -150,9 +131,7 @@ at-most-once / at-least-once / idempotent write.
 | `gold_feature_daily` — ổn định 3 lượt | | ✓ | |
 | `gold_doc_chunks` — số hàng | | 31.200 | |
 | `quarantine_tickets` — số hàng | | 312 | |
+| `silver_tickets` — số ticket | | 12.480 | |
 | `dbt test` | | pass, > 9 test | |
-| `rows scanned` trước → sau | | giảm ≥ 10× | |
-| `result hash` | | không đổi | |
 | P99 độ trễ đo được | | (ghi số) | |
-| `make crash-test` | | ĐẠT ✓ | |
-| **Tổng verify** | | 5/5 tiêu chí | |
+| **Tổng verify** | | 4/4 tiêu chí | |

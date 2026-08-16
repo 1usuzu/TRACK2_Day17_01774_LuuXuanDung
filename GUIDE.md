@@ -10,9 +10,9 @@ comment `KHUNG THỰC HIỆN`:
 |---|---|
 | 1 | `dbt/models/gold/gold_training_set.sql` |
 | 2 | `dbt/models/gold/gold_feature_daily.sql` |
-| 3 | `dbt/models/silver/silver_tickets.sql`, `dbt/models/silver/quarantine_tickets.sql` |
-| 4 | `tools/compact.py` |
-| 5 | `ingest/consumer.py` |
+| 3 | `dbt/macros/normalize_priority.sql`, `dbt/models/silver/silver_tickets.sql`, `dbt/models/silver/quarantine_tickets.sql` |
+
+Hai bài mở rộng (không bắt buộc) nằm trong [EXTRA.md](EXTRA.md).
 
 ---
 
@@ -64,6 +64,67 @@ q "select count(*) from gold_training_set"
 | `gold_training_set` | 1 row / 1 ticket |
 | `gold_feature_daily` | 1 row / (ngày, customer) |
 | `gold_doc_chunks` | 1 row / 1 chunk — **nhóm đối chứng**, không có lỗi |
+
+---
+
+## 0b. dbt trong 10 phút — đọc nếu bạn chưa từng dùng dbt
+
+Bạn không cần học dbt để làm lab này. Chỉ cần năm khái niệm sau.
+
+**Model = một file `.sql` = một bảng.** File `models/gold/gold_training_set.sql`
+tạo ra bảng `gold_training_set`. Bạn viết đúng một câu `SELECT`; dbt tự bọc nó
+thành `CREATE TABLE ...` hoặc `INSERT ...` tuỳ cấu hình.
+
+**`{{ ref('ten_model') }}`** thay cho tên bảng khi lấy dữ liệu từ model khác.
+Viết `from {{ ref('silver_tickets') }}` thay vì `from silver_tickets`. Nhờ đó
+dbt biết thứ tự chạy: silver trước, gold sau.
+
+**`{{ config(...) }}`** ở đầu file quyết định dbt sinh ra câu lệnh ghi nào:
+
+```
+materialized = 'table'         -> DROP rồi CREATE lại toàn bộ mỗi lần chạy.
+                                  Luôn ổn định. Dùng cho các model silver.
+materialized = 'incremental'   -> Lần đầu CREATE, các lần sau chỉ ghi thêm
+                                  phần mới. Nhanh hơn nhiều — và mọi lỗi
+                                  trong lab này đều nằm ở loại model này.
+```
+
+Với `incremental` còn hai tham số nữa quyết định *cách* ghi thêm:
+
+```
+unique_key            = 'cot_khoa'   -> cho dbt biết dòng nào là "cùng một dòng"
+incremental_strategy  = 'merge' | 'delete+insert' | 'append'
+```
+
+**Khối `{% if is_incremental() %} ... {% endif %}`** chỉ có tác dụng từ lần
+chạy thứ hai trở đi (khi bảng đã tồn tại). Bên trong thường là mệnh đề `WHERE`
+giới hạn phần dữ liệu cần xử lý. Lần chạy đầu tiên, khối này bị bỏ qua và model
+quét toàn bộ nguồn.
+
+**Macro** = một đoạn SQL đặt tên, để trong `dbt/macros/`. Gọi bằng
+`{{ ten_macro('tham_so') }}` và dbt chèn nội dung vào đúng chỗ đó. Dùng khi
+nhiều model cần chung một logic.
+
+### Xem dbt thực sự sinh ra SQL gì
+
+Đây là cách gỡ rối hiệu quả nhất khi model chạy không như bạn nghĩ:
+
+```bash
+make pipeline
+cat dbt/target/run/lab17/models/gold/gold_training_set.sql
+```
+
+File đó là câu lệnh SQL **thật** mà dbt gửi xuống database. Nếu bạn không chắc
+`config` của mình có tác dụng gì, hãy đọc file này trước khi đoán.
+
+### Chạy một model
+
+```bash
+cd dbt && ../.venv/bin/dbt run --select silver_tickets --profiles-dir .
+```
+
+Trong lab, `make pipeline` đã gọi dbt cho cả 14 ngày nên bạn hiếm khi cần lệnh
+này — nhưng nó hữu ích khi muốn thử nhanh một model.
 
 ---
 
@@ -297,49 +358,38 @@ Mapping theo tài liệu API của team backend: `urgent → 1`, `high → 2`,
 > vì con số kỳ vọng, đồng thời vứt bỏ một lượng lớn dữ liệu hợp lệ chỉ vì
 > source đổi format.
 
-### 3.3 Ba việc cần làm
+### 3.3 Bốn chỗ cần sửa
 
-**(a) Chuẩn hoá giá trị trong `silver_tickets.sql`.** Thay `try_cast(...)` bằng
-biểu thức xử lý được cả số lẫn nhãn chuỗi, và loại row thuộc nhóm 3 ra khỏi Silver.
+Mọi file đã được nối sẵn với nhau. Bạn chỉ điền vào chỗ trống, không phải tạo
+file mới.
 
-Thứ tự hai bước quyết định số row của bảng: **lọc bỏ row lỗi trước, rank lấy
-row mới nhất sau**. Làm ngược lại sẽ khiến ticket có row mới nhất bị lỗi biến
-mất khỏi Silver, kéo theo `gold_training_set` thiếu row. Đối tượng bị quarantine
-là **row CDC**, không phải **ticket**.
+**(a) `dbt/macros/normalize_priority.sql`** — thay `try_cast(...)` bằng một
+khối `CASE` xử lý đủ ba nhóm ở mục 3.2. Trả về `NULL` cho nhóm 3.
 
-**(b) Viết model `quarantine_tickets`.** File khung có sẵn tại
-`dbt/models/silver/quarantine_tickets.sql`, kèm đầy đủ yêu cầu và câu hỏi thiết
-kế. Grain: 1 row / 1 row CDC bị loại. Số row kỳ vọng nằm trong
-`expected/quarantine_tickets.count`.
+Macro này đang được **cả hai** model dùng (`silver_tickets` để lấy giá trị,
+`quarantine_tickets` để tìm bản ghi lỗi), nên sửa một chỗ là cả hai cùng đổi —
+chúng không thể lệch nhau.
 
-Biểu thức chuẩn hoá ở (a) và điều kiện lọc ở (b) phải dùng **chung một định
-nghĩa** — đặt trong macro tại `dbt/macros/` hoặc một CTE dùng lại. Nếu hai model
-tự định nghĩa riêng, chúng sẽ lệch nhau ngay khi một bên được sửa.
+**(b) `dbt/models/silver/silver_tickets.sql`** — loại các bản ghi mà macro trả
+về `NULL` ra khỏi Silver.
 
-**(c) Bật contract và thêm test** trong `dbt/models/silver/schema.yml`:
+> ⚠️ Thứ tự quyết định số row của bảng. Hiện tại file đang xếp hạng
+> (`row_number`) trước rồi mới chọn. Nếu bạn chỉ thêm điều kiện lọc vào cuối,
+> ticket nào có bản ghi **mới nhất** bị hỏng sẽ biến mất khỏi Silver — số
+> ticket tụt từ 12.480 xuống 12.168.
+>
+> Đúng phải là **lọc trước, xếp hạng sau**. Bạn loại *bản ghi* hỏng, không loại
+> cả *ticket*: ticket đó vẫn còn trạng thái hợp lệ từ lần cập nhật trước.
+> `make verify` có dòng riêng bắt lỗi này.
 
-```yaml
-config:
-  contract:
-    enforced: true      # từ false chuyển thành true
-```
+**(c) `dbt/models/silver/quarantine_tickets.sql`** — model đã viết sẵn, chỉ còn
+mệnh đề `where false`. Thay bằng điều kiện "macro trả về NULL".
+
+**(d) `dbt/models/silver/schema.yml`** — đổi `enforced: false` thành `true`, và
+bỏ comment khối `tests:` ở cột `priority` rồi điền danh sách giá trị hợp lệ.
 
 Contract ràng buộc **kiểu dữ liệu**; miền giá trị là việc của test. Cần cả hai —
-contract một mình vẫn cho `priority = 99` đi qua:
-
-```yaml
-- name: priority
-  data_type: integer
-  tests:
-    - not_null
-    - accepted_values:
-        values: [1, 2, 3, 4]
-        quote: false
-```
-
-> Với incremental model có bật contract, dbt yêu cầu khai báo `on_schema_change`
-> là `'fail'` hoặc `'append_new_columns'`. Thông báo lỗi tương ứng là yêu cầu
-> cấu hình, không phải bug.
+contract một mình vẫn cho `priority = 99` đi qua, vì 99 đúng là integer.
 
 ### 3.4 Câu hỏi thiết kế
 
@@ -363,120 +413,7 @@ make verify
 
 ---
 
-## 4. Nhiệm vụ 4 — Query dashboard chậm
-
-### 4.1 Đo các chỉ số hiện trạng
-
-```bash
-make explain            # rows scanned, rows on disk, files, result hash
-make plan               # in thêm cây EXPLAIN ANALYZE
-ls data/gold_events | wc -l
-du -sh data/gold_events
-```
-
-Ghi ba chỉ số vào report: `rows scanned`, `files`, `rows on disk`.
-
-> **Vì sao `rows scanned` lớn hơn `rows on disk`.** DuckDB đọc Parquet theo lô
-> và làm tròn lên theo từng file: một file 88 row vẫn tốn khối lượng đọc tương
-> đương khoảng 1.000 row. Chênh lệch đó chính là small-file problem hiện thành
-> con số.
->
-> Nhiệm vụ chấm theo `rows scanned` chứ không theo thời gian, vì thời gian phụ
-> thuộc cấu hình máy và trạng thái cache của OS.
-
-### 4.2 Đối chiếu điều kiện lọc với storage layout
-
-Mở `queries/dashboard.sql` và xác định:
-
-1. Query filter theo những cột nào? (có hai điều kiện)
-2. Tên file trong `data/gold_events/` có mang thông tin của cột nào không?
-
-Nếu path không mang thông tin filter, engine buộc phải mở toàn bộ file rồi mới
-biết file nào chứa dữ liệu cần thiết.
-
-Ngoài ra, xem dạng của điều kiện filter:
-
-```sql
-where strftime(event_time, '%Y-%m-%d') = '2026-08-09'
-```
-
-Điều kiện này bọc cột trong một function call. Engine không so được kết quả của
-function với tên thư mục partition, cũng không so được với min/max statistics
-của row group. Cần viết lại sao cho **cột đứng một mình ở một vế** (predicate
-sargable).
-
-### 4.3 Tái cấu trúc layout dữ liệu
-
-Viết `tools/compact.py` — khung `COPY ... TO ...` cùng ba quyết định cần lý giải
-đã có trong docstring của file. Sau đó sửa `queries/dashboard.sql` trỏ vào
-dataset mới, bật `hive_partitioning`, và viết lại điều kiện filter.
-
-```bash
-make compact
-make explain
-```
-
-### 4.4 Tiêu chí hoàn thành
-
-- `rows scanned` giảm tối thiểu **10 lần** so với baseline
-- `files` giảm từ 5.000 xuống hàng chục
-- `result hash` **không đổi** — nếu đổi, ngữ nghĩa query đã bị sửa và toàn bộ
-  hạng mục này không được tính điểm
-
----
-
-## 5. Nhiệm vụ 5 *(mở rộng)* — Delivery semantics của consumer
-
-### 5.1 Tái hiện sự cố
-
-```bash
-make crash-test
-```
-
-Kịch bản: chạy hết một lượt để lấy số row chuẩn, chạy lại và kill tiến trình ở
-giữa một batch ghi, rồi restart và so sánh. Đọc kết quả để xác định consumer
-đang **mất** row hay tạo ra row **trùng**.
-
-### 5.2 Phân tích thứ tự thao tác
-
-Mở `ingest/consumer.py`, đọc khối `KHUNG THỰC HIỆN` ở đầu file và khối được
-đánh dấu trong hàm `consume()`:
-
-```python
-consumer.commit()                 # commit offset
-maybe_crash(batch_no, crash_at)   # sự cố xảy ra tại đây
-write_batch(con, batch)           # ghi dữ liệu
-```
-
-Cần trả lời:
-
-- Nếu tiến trình chết tại `maybe_crash()`, batch hiện tại đã được ghi chưa?
-  Offset đã dịch chưa? Lần restart sẽ đọc từ vị trí nào?
-- Nếu đảo thứ tự thành ghi trước, commit sau, lần restart sẽ đọc lại batch đó.
-  Với câu `INSERT` hiện tại, hệ quả là gì?
-
-Đây là hai delivery semantics **at-most-once** và **at-least-once** trong bài
-giảng. Exactly-once không tồn tại ở tầng transport; thứ chọn được là
-at-least-once cộng với một phép ghi idempotent.
-
-### 5.3 Tính idempotent của phép ghi
-
-DuckDB hỗ trợ `insert ... on conflict (...) do update set ...`, nhưng chỉ khi
-cột key có constraint `primary key` hoặc `unique`. Xem hằng `DDL` ở đầu file.
-
-Câu hỏi cho report: `DO UPDATE` khác `DO NOTHING` ở điểm nào khi một message
-được replay với nội dung đã đổi?
-
-### 5.4 Tiêu chí hoàn thành
-
-```bash
-make crash-test     # NHIỆM VỤ 5: ĐẠT
-make verify         # bốn nhiệm vụ trước không bị ảnh hưởng
-```
-
----
-
-## 6. Viết report
+## 4. Viết report
 
 Dùng [REPORT_TEMPLATE.md](REPORT_TEMPLATE.md). Mỗi nhiệm vụ trình bày bốn mục:
 
@@ -498,12 +435,10 @@ sẽ ghi thêm thay vì ghi đè.*
 
 | Hiện tượng | Hướng xử lý |
 |---|---|
-| `dbt run` báo `Invalid value for on_schema_change` | Incremental model có bật contract; thêm `on_schema_change='fail'` |
 | `Can't open a connection to same database file` | Có tiến trình khác đang mở `warehouse.duckdb`; đóng shell DuckDB đang chạy |
 | `make verify` lỗi lạ sau nhiều lần sửa | `make clean && make pipeline` |
+| Không hiểu dbt sinh ra SQL gì | Đọc `dbt/target/run/lab17/models/.../<model>.sql` — xem mục 0b |
 | Số row đúng nhưng `ỔN ĐỊNH` ✗ | Model đang `insert` thay vì `merge` / `delete+insert` |
 | `ỔN ĐỊNH` ✓ nhưng thiếu row | Điều kiện lọc bỏ sót dữ liệu — xem nhiệm vụ 2 |
 | `quarantine_tickets` có hàng nghìn row | Đang quarantine cả nhãn chuỗi hợp lệ — xem mục 3.2 |
 | `silver_tickets` dưới 12.480 row | Đang loại cả ticket thay vì chỉ loại row CDC lỗi — xem mục 3.3(a) |
-| `result hash` đổi sau khi tối ưu | Query mới không còn tương đương — rà lại mệnh đề `WHERE` |
-| Lỡ chạy `make seed` sau khi xong nhiệm vụ 4 | Chạy lại `make compact` |

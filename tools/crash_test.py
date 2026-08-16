@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kịch bản sự cố cho nhiệm vụ 5 — `make crash-test`.
+"""Kịch bản sự cố cho bài mở rộng B (EXTRA.md) — `make crash-test`.
 
 Ba lượt chạy, trên một kho riêng (không đụng warehouse.duckdb):
 
@@ -104,7 +104,7 @@ def main(strict: bool = False) -> int:
     ok = lost <= 0 and dup == 0 and c_total == a_total
     print(f"  {'C == A':<34}{'✓' if c_total == a_total else f'✗ {c_total:,} ≠ {a_total:,}'}")
     print("  " + "-" * 58)
-    print(f"  NHIỆM VỤ 5: {'ĐẠT ✓' if ok else 'CHƯA ĐẠT ✗'}\n")
+    print(f"  BÀI MỞ RỘNG B: {'ĐẠT ✓' if ok else 'CHƯA ĐẠT ✗'}\n")
     return 0 if (ok or not strict) else 1
 
 

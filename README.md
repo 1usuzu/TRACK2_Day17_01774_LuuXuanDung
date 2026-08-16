@@ -5,7 +5,8 @@
 > Ba tài liệu cần đọc:
 > **README.md** (bạn đang ở đây — bối cảnh và yêu cầu) ·
 > [**GUIDE.md**](GUIDE.md) (trình tự thao tác từng nhiệm vụ) ·
-> [**RUBRIC.md**](RUBRIC.md) (thang điểm 100)
+> [**RUBRIC.md**](RUBRIC.md) (thang điểm 100) ·
+> [**EXTRA.md**](EXTRA.md) (bài mở rộng, không bắt buộc)
 >
 > Khung pseudo-code của mỗi nhiệm vụ nằm ngay trong file cần sửa, dưới dạng chú
 > thích `KHUNG THỰC HIỆN`.
@@ -25,7 +26,7 @@ Kafka events + feedback ─┘                          ├─→  gold_training
 ```
 
 Đường ống **chạy được, không phát sinh lỗi, `dbt test` pass**. Tuy vậy đội vận
-hành đã gửi bốn phiếu sự cố.
+hành đã gửi ba phiếu sự cố.
 
 Yêu cầu của lab không phải xây dựng lại hệ thống, mà là **chẩn đoán và khắc
 phục** — đúng với công việc của một data engineer khi nhận ca trực.
@@ -40,7 +41,6 @@ Sau lab, bạn phải thực hiện được:
 - Xử lý **dữ liệu về muộn** bằng lookback window
 - Dùng **data contract** để ràng buộc schema, và **định tuyến bản ghi lỗi**
   thay vì để pipeline dừng
-- Đọc **`EXPLAIN ANALYZE`** và chứng minh kết quả tối ưu bằng số đo
 
 ## 3. Điều kiện cần
 
@@ -70,7 +70,7 @@ make verify     # chạy 3 lượt liên tiếp và in bảng đánh giá
 `make verify` là công cụ phản hồi chính trong suốt lab. Chạy lại sau mỗi thay
 đổi. Khi cần kiểm tra nhanh, dùng `make quick` (một lượt).
 
-Trạng thái ban đầu — **bốn dòng ✗ tương ứng bốn nhiệm vụ**:
+Trạng thái ban đầu — **ba dòng ✗ tương ứng ba nhiệm vụ**:
 
 ```
   BẢNG                  ỔN ĐỊNH          SỐ HÀNG     KỲ VỌNG   GHI CHÚ
@@ -86,10 +86,10 @@ Trạng thái ban đầu — **bốn dòng ✗ tương ứng bốn nhiệm vụ*
   silver_tickets.priority ∈ 1..4, không NULL  ✗ 6,606 hàng sai
   quarantine_tickets đúng số bản ghi lỗi      ✗ 0 / 312
   gold_training_set: 1 hàng / 1 ticket        ✗ 12,480 ticket bị lặp
-  dashboard rows scanned                      ✗ 5,000,000 → 5,000,000 (1.0×)
+  bài mở rộng (EXTRA.md)                      — chưa chạy `make seed-extra`
   DAG: catchup / max_active_runs              ✗ True / None
 
-  TỔNG KẾT   1/5 tiêu chí đạt
+  TỔNG KẾT   1/4 tiêu chí đạt
 ```
 
 Hai cột đầu đo hai đại lượng khác nhau:
@@ -104,14 +104,11 @@ không. Một bảng có thể **ổn định nhưng vẫn sai** — xem `gold_f
 ├─ seed/events.jsonl           # topic `ai-events`
 ├─ seed/transcripts.jsonl      # file JSON trên S3
 ├─ ingest/load_bronze.py       # Bronze loader — đã idempotent, không cần sửa
-├─ ingest/log_client.py        # commit log: topic + offset trên đĩa
-├─ ingest/consumer.py          #                                  ← nhiệm vụ 5
 ├─ dbt/models/silver/          # silver_tickets, quarantine_tickets ← nhiệm vụ 3
 ├─ dbt/models/gold/            # 3 bảng Gold                       ← nhiệm vụ 1, 2
-├─ queries/dashboard.sql       # truy vấn của đội CSKH             ← nhiệm vụ 4
-├─ tools/compact.py            # khung trống, cần hiện thực        ← nhiệm vụ 4
-├─ data/gold_events/           # dataset Parquet 5.000 file        ← nhiệm vụ 4
+├─ dbt/macros/                 # normalize_priority.sql            ← nhiệm vụ 3
 ├─ dags/ai_training_pipeline.py# DAG Airflow — chỉ đọc, không chạy ← nhiệm vụ 1
+├─ EXTRA.md + queries/ + tools/compact.py + ingest/consumer.py     ← bài mở rộng
 ├─ expected/                   # số hàng đúng, dùng để tự kiểm tra
 ├─ tools/verify.py             # make verify
 └─ Makefile
@@ -189,35 +186,11 @@ không. Một bảng có thể **ổn định nhưng vẫn sai** — xem `gold_f
 
 ---
 
-### Nhiệm vụ 4 — Hiệu năng truy vấn dashboard suy giảm *(25 phút)*
+### Bài mở rộng *(không bắt buộc)*
 
-> **Phiếu sự cố #1052.** "Dashboard của đội CSKH mất 38 giây mới load. Ba tháng
-> trước chỉ 2 giây. Không ai sửa dòng code nào."
-
-**Cần thu thập trước khi sửa**
-- `make explain` — ghi lại **`rows scanned`**, không ghi thời gian
-- `ls data/gold_events | wc -l` — bao nhiêu file, kích thước trung bình bao nhiêu?
-- Truy vấn lọc theo cột nào? Bãi dữ liệu được partition theo cột nào?
-- `make plan` để xem cây `EXPLAIN ANALYZE`
-
-**Tiêu chí đạt**
-- `rows scanned` giảm tối thiểu **10 lần**, có số đo `make explain` trước và sau
-- Số file giảm đáng kể sau compaction
-- Kết quả truy vấn **không đổi** — `make explain` đối chiếu hash kết quả
-
----
-
-### Nhiệm vụ 5 *(mở rộng)* — Ngữ nghĩa phân phối khi consumer gặp sự cố
-
-> `make crash-test` dừng tiến trình consumer ở giữa một lô ghi rồi khởi động
-> lại, sau đó đối chiếu số hàng. Kết quả cho thấy **mất** bản ghi hay **trùng**
-> bản ghi?
-
-**Cần điều tra:** trong `ingest/consumer.py`, offset được commit **trước** hay
-**sau** khi ghi thành công? Đảo thứ tự thì được gì, mất gì? Đảo thứ tự **một
-mình nó** đã đủ chưa?
-
-**Tiêu chí đạt:** `make crash-test` báo `NHIỆM VỤ 5: ĐẠT ✓`.
+Xong sớm thì có hai bài nữa trong [EXTRA.md](EXTRA.md), mỗi bài **+5 điểm**:
+tối ưu query dashboard chậm (partition + small-file problem), và xử lý
+consumer bị kill giữa batch (delivery semantics).
 
 ---
 
@@ -227,8 +200,7 @@ mình nó** đã đủ chưa?
 2. **Kết quả `make verify`** — dán nguyên output ba lượt chạy
 3. **Báo cáo một trang** theo [REPORT_TEMPLATE.md](REPORT_TEMPLATE.md). Mỗi
    nhiệm vụ trình bày: triệu chứng → **nguyên nhân** → cách khắc phục →
-   bằng chứng. Nhiệm vụ 2 phải có giá trị **P99**; nhiệm vụ 4 phải có
-   **`rows scanned`** trước và sau.
+   bằng chứng. Nhiệm vụ 2 bắt buộc phải có giá trị **P99** đo được.
 
 ## 7. Đánh giá
 
@@ -237,11 +209,10 @@ Thang 100 điểm, chi tiết trong [RUBRIC.md](RUBRIC.md).
 | Tiêu chí | Điểm |
 |---|---|
 | Ba lượt chạy cho checksum giống hệt nhau | 30 |
-| Số hàng ba bảng Gold khớp `expected/` | 30 |
-| `dbt test` pass và quarantine đúng bản ghi | 15 |
-| `rows scanned` giảm ≥ 10× kèm bằng chứng | 15 |
-| Báo cáo nêu đúng **nguyên nhân**, không chỉ mô tả cách khắc phục | 10 |
-| *(thưởng)* Nhiệm vụ 5 đạt | +5 |
+| Số hàng các bảng Gold khớp `expected/` | 30 |
+| `contract` bật, `dbt test` pass, `quarantine_tickets` đúng | 20 |
+| Báo cáo nêu đúng **nguyên nhân**, không chỉ mô tả cách khắc phục | 20 |
+| *(thưởng)* mỗi bài trong [EXTRA.md](EXTRA.md) | +5 |
 
-> Khắc phục đúng nhưng không giải thích được cơ chế sẽ mất 10 điểm cuối. Trong
+> Khắc phục đúng nhưng không giải thích được cơ chế sẽ mất 20 điểm cuối. Trong
 > môi trường vận hành, phần giải thích là yếu tố ngăn lỗi tái diễn.

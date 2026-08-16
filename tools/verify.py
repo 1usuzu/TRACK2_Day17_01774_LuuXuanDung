@@ -227,10 +227,9 @@ def main() -> int:
     for label, ok, detail in inv:
         print(f"  {label:<44}{OK if ok else BAD} {detail}")
 
-    d = dashboard_check()
-    if "note" in d:
-        print(f"  {'queries/dashboard.sql':<44}{BAD} {d['note']}")
-    else:
+    from tools.explain import BASELINE_FILE
+    d = dashboard_check() if BASELINE_FILE.exists() else None
+    if d and "note" not in d:
         print(f"  {'dashboard rows scanned':<44}"
               f"{OK if d['ok'] else BAD} {d['before']:,} → {d['after']:,} "
               f"({d['factor']:.1f}×, cần ≥ 10×)")
@@ -239,6 +238,9 @@ def main() -> int:
               f"{d['files_before']:,} → {d['files_after']:,}")
         print(f"  {'  kết quả truy vấn không đổi':<44}"
               f"{OK if d['same_result'] else BAD}")
+
+    if d is None:
+        print(f"  {'bài mở rộng (EXTRA.md)':<44}— chưa chạy `make seed-extra`")
 
     from tools.check_dag import check as check_dag
     dag = check_dag()
@@ -252,8 +254,7 @@ def main() -> int:
         "3 · contract + quarantine + dbt test": (
             t["ok"] and all(ok for _, ok, _ in inv)
         ),
-        "4 · dashboard rows scanned giảm ≥ 10×": bool(d.get("ok")),
-        "5 · gold_doc_chunks vẫn ổn định (đối chứng)": table_ok["gold_doc_chunks"],
+        "4 · gold_doc_chunks vẫn ổn định (đối chứng)": table_ok["gold_doc_chunks"],
     }
     print()
     print("  TỔNG KẾT")
@@ -272,7 +273,7 @@ def main() -> int:
                     "runs": [{k: v["rows"] for k, v in s.items()} for s in snaps],
                     "criteria": criteria,
                     "dbt_test": t,
-                    "dashboard": {k: v for k, v in d.items() if k != "result"},
+                    "dashboard": {k: v for k, v in d.items() if k != "result"} if d else None,
                     "dag": dag,
                 },
                 indent=2, default=str,

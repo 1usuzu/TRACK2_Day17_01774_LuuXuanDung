@@ -1,39 +1,36 @@
 -- ---------------------------------------------------------------------------
 -- silver_tickets — trạng thái mới nhất của mỗi ticket, dựng lại từ luồng CDC.
 -- ---------------------------------------------------------------------------
+-- Model này materialized = 'table': dựng lại toàn bộ mỗi lần chạy, nên luôn
+-- ổn định.
+--
 -- Phần xử lý CDC dưới đây đã đúng và không cần sửa:
---   * mỗi ticket lấy bản ghi có (event_time, cdc_seq) lớn nhất;
---   * ticket có op = 'd' bị loại khỏi Silver.
+--   * mỗi ticket lấy bản ghi có (event_time, cdc_seq) lớn nhất  -> _rn = 1
+--   * ticket có op = 'd' bị loại khỏi Silver
 --
--- KHUNG THỰC HIỆN — NHIỆM VỤ 3
+-- ===========================================================================
+-- NHIỆM VỤ 3 — phần 2/3
+-- ===========================================================================
+-- Giá trị `priority` được chuẩn hoá bằng macro
+-- `dbt/macros/normalize_priority.sql` — sửa logic quy đổi ở đó, không sửa ở
+-- đây. Việc còn lại của file này là **loại bỏ những bản ghi không chuẩn hoá
+-- được** ra khỏi Silver.
 --
---   Cột `priority` được contract quy định là số nguyên trong miền 1..4. Hãy đối
---   chiếu phân bố giá trị ở Bronze với phân bố ở Silver trước khi sửa:
+-- ⚠️ THỨ TỰ QUYẾT ĐỊNH SỐ HÀNG CỦA BẢNG.
 --
---       SELECT priority_raw, count(*) FROM bronze_tickets_cdc GROUP BY 1;
---       SELECT priority,     count(*) FROM silver_tickets      GROUP BY 1;
+--    Hiện tại: xếp hạng (row_number) trước, rồi mới chọn.
+--    Nếu bạn chỉ thêm điều kiện lọc vào cuối, ticket nào có bản ghi MỚI NHẤT
+--    bị hỏng sẽ biến mất hoàn toàn khỏi Silver — số ticket tụt từ 12.480
+--    xuống 12.168, và gold_training_set hụt theo.
 --
---   Giá trị nguồn chia thành ba nhóm, và ba nhóm này KHÔNG được xử lý giống
---   nhau. Xác định ba nhóm đó, rồi thiết kế biểu thức chuẩn hoá:
+--    Đúng phải là: LỌC bỏ bản ghi hỏng trước → SAU ĐÓ mới xếp hạng.
+--    Bạn loại BẢN GHI hỏng, không loại cả TICKET: ticket đó vẫn còn trạng
+--    thái hợp lệ từ lần cập nhật trước.
 --
---       normalize_priority(raw) := CASE
---           WHEN <nhóm 1: đã đúng contract>   THEN <giữ nguyên>
---           WHEN <nhóm 2: đổi cách biểu diễn> THEN <map về miền hợp lệ>
---           ELSE NULL   -- NULL = "không hợp lệ", tín hiệu để quarantine
---       END
+--    `make verify` có một dòng riêng ("silver_tickets giữ đủ 12.480 ticket")
+--    để bắt đúng lỗi này.
 --
---   Thứ tự hai bước dưới đây quyết định số hàng của bảng:
---       (1) loại bỏ bản ghi CDC không chuẩn hoá được
---       (2) SAU ĐÓ mới xếp hạng để lấy bản ghi mới nhất của mỗi ticket
---   Làm ngược lại thì ticket có bản ghi mới nhất bị lỗi sẽ biến mất khỏi
---   Silver, kéo theo gold_training_set thiếu hàng. Quarantine BẢN GHI, không
---   quarantine TICKET.
---
---   Biểu thức chuẩn hoá nên viết MỘT LẦN dùng chung (macro trong dbt/macros/
---   hoặc một CTE), vì quarantine_tickets phải dùng đúng định nghĩa đó. Hai
---   model tự định nghĩa riêng thì sớm muộn cũng lệch nhau.
---
---   Sau khi sửa, bật contract và bổ sung test trong schema.yml.
+-- Xong file này thì sang models/silver/quarantine_tickets.sql (phần 3/3).
 -- ---------------------------------------------------------------------------
 
 {{ config(materialized = 'table') }}
@@ -42,6 +39,7 @@ with ranked as (
 
     select
         *,
+        {{ normalize_priority('priority_raw') }}             as priority_clean,
         row_number() over (
             partition by ticket_id
             order by event_time desc, cdc_seq desc
@@ -57,11 +55,7 @@ select
     customer_id,
     customer_name,
     segment,
-
-    -- Nguồn thỉnh thoảng gửi giá trị không phải số. try_cast trả về NULL
-    -- thay vì làm job đổ vỡ, nên pipeline vẫn báo xanh.
-    try_cast(priority_raw as integer)                        as priority,
-
+    priority_clean                                           as priority,
     category,
     channel,
     status,

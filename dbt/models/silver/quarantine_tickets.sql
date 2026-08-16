@@ -1,44 +1,38 @@
 -- ---------------------------------------------------------------------------
--- quarantine_tickets — NHIỆM VỤ 3.  TRẠNG THÁI: KHUNG RỖNG, CHƯA CÓ LOGIC.
+-- quarantine_tickets — nơi tiếp nhận bản ghi CDC không thoả data contract.
 -- ---------------------------------------------------------------------------
--- Mục đích: tiếp nhận các bản ghi CDC không thoả data contract, để pipeline
--- tiếp tục chạy thay vì dừng, và để người trực có một hàng đợi cần xử lý.
+-- NHIỆM VỤ 3 — phần 3/3.  Model đã được nối sẵn, bạn chỉ điền mệnh đề WHERE.
 --
--- Yêu cầu:
---   * Grain: 1 hàng / 1 BẢN GHI CDC bị loại — không phải 1 hàng / 1 ticket.
---     Một ticket có thể có nhiều bản ghi CDC, trong đó chỉ một bản ghi lỗi.
---   * Số hàng kỳ vọng: xem expected/quarantine_tickets.count
---   * Cột tối thiểu: ticket_id, cdc_seq, event_time, priority_raw, reject_reason
+-- Grain: 1 hàng / 1 BẢN GHI CDC bị loại — không phải 1 hàng / 1 ticket.
+--        Một ticket có nhiều bản ghi CDC, thường chỉ một bản ghi bị hỏng.
+-- Số hàng kỳ vọng: xem expected/quarantine_tickets.count
 --
--- KHUNG THỰC HIỆN
---   quarantine := SELECT <các cột trên>
---                 FROM   {{ source('bronze', 'bronze_tickets_cdc') }}
---                 WHERE  <priority_raw KHÔNG chuẩn hoá được về miền hợp lệ>
+-- Điều kiện lọc phải dùng ĐÚNG macro mà silver_tickets dùng, để hai model
+-- không thể lệch nhau: bản ghi nào bị loại khỏi Silver thì xuất hiện ở đây,
+-- không thừa không thiếu. Cụ thể: lọc những hàng mà macro normalize_priority
+-- trả về NULL.
 --
---   reject_reason := CASE
---                        WHEN <giá trị rỗng>        THEN '...'
---                        WHEN <là số, ngoài miền>   THEN '...'
---                        ELSE                            '...'
---                    END
---
--- Câu hỏi cần trả lời trước khi viết:
---   1. Điều kiện "không chuẩn hoá được" nên đặt ở đâu để model này và
---      silver_tickets dùng CHUNG một định nghĩa? Nếu hai model tự định nghĩa
---      riêng, chuyện gì xảy ra khi một trong hai được sửa?
---   2. reject_reason nên phân biệt bao nhiêu loại lỗi thì đủ để người trực
---      biết phải làm gì tiếp?
---   3. Nếu một ticket có bản ghi mới nhất bị loại, trạng thái nào của ticket
---      đó nên xuất hiện trong silver_tickets?
+-- Vì sao tách riêng thay vì để pipeline dừng: vài trăm bản ghi hỏng không có
+-- quyền chặn hơn 130.000 event và 31.200 chunk hoàn toàn bình thường đến tay
+-- người dùng. Pipeline chạy tiếp, bảng này là hàng đợi cho người trực xử lý.
 -- ---------------------------------------------------------------------------
 
 {{ config(materialized = 'table') }}
 
--- Khung rỗng: đúng cấu trúc cột, không có hàng nào.
--- Thay toàn bộ khối SELECT dưới đây bằng truy vấn thật của bạn.
 select
-    cast(null as varchar)   as ticket_id,
-    cast(null as integer)   as cdc_seq,
-    cast(null as timestamp) as event_time,
-    cast(null as varchar)   as priority_raw,
-    cast(null as varchar)   as reject_reason
+    ticket_id,
+    cdc_seq,
+    op,
+    event_time,
+    _ingested_at,
+    priority_raw,
+    {{ priority_reject_reason('priority_raw') }}             as reject_reason,
+    customer_id,
+    customer_name,
+    category,
+    status
+from {{ source('bronze', 'bronze_tickets_cdc') }}
+
+-- TODO(nhiệm vụ 3): thay `false` bằng điều kiện "priority không chuẩn hoá
+-- được". Khi còn `false`, bảng rỗng và make verify báo 0 / <số kỳ vọng>.
 where false

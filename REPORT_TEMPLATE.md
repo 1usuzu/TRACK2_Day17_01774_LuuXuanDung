@@ -15,7 +15,7 @@
 
 </details>
 
-Tổng kết: **… / 5 tiêu chí đạt**
+Tổng kết: **… / 4 tiêu chí đạt**
 
 ---
 
@@ -64,47 +64,21 @@ pipeline dừng khi gặp bản ghi lỗi?
 
 ---
 
-## 4 · Hiệu năng truy vấn dashboard suy giảm
+## 4 · *(mở rộng, không bắt buộc)* Bài trong EXTRA.md
 
 | | |
 |---|---|
-| **Triệu chứng** | |
-| **Nguyên nhân** | |
-| **Cách khắc phục** | *(storage layout + truy vấn)* |
-
-| Chỉ số | Trước | Sau | Tỷ lệ |
-|---|---|---|---|
-| `rows scanned` | | | …× |
-| số file | | | |
-| `result hash` | | | phải giống nhau |
-
-Vì sao chỉ số đánh giá là `rows scanned` chứ không phải thời gian chạy?
-
-> …
-
----
-
-## 5 · *(mở rộng)* Ngữ nghĩa phân phối khi consumer gặp sự cố
-
-| | |
-|---|---|
-| **Kết quả kịch bản ban đầu** | mất … hàng / trùng … hàng |
+| **Bài đã làm** | A / B / không làm |
 | **Nguyên nhân** | |
 | **Cách khắc phục** | |
-| **Kết quả `make crash-test`** | |
-
-`DO UPDATE` khác `DO NOTHING` ở điểm nào khi một message được phát lại với
-nội dung đã thay đổi?
-
-> …
+| **Bằng chứng** | |
 
 ---
 
-## 6 · Tổng kết
+## 5 · Tổng kết
 
 | Nhiệm vụ | Khi tiếp nhận một hệ thống chưa quen, tôi sẽ kiểm tra điều này trước tiên |
 |---|---|
 | 1 | |
 | 2 | |
 | 3 | |
-| 4 | |
