@@ -1,6 +1,6 @@
 # Báo cáo LAB 17 — Data Pipeline Engineering
 
-**Họ tên:** Lưu Xuân Dũng  **Lớp:** E403 - Track 2  **Ngày:** 17/08/2026
+**Họ tên:** Học viên AICB  **Lớp:** AICB-P2T2  **Ngày:** 17/08/2026
 
 ---
 
@@ -61,7 +61,7 @@ Tổng kết: **4 / 4 tiêu chí đạt (Hoàn thành cả 2 bài mở rộng A 
 ## 1 · Kích thước bảng training tăng sau mỗi lần chạy
 
 | | |
-| --- | --- |
+|---|---|
 | **Triệu chứng** | Khi chạy lại pipeline hoặc bấm Clear Task trên Airflow, `gold_training_set` tăng số lượng dòng liên tục (từ 12,480 lên 13,790 ở run 1 và 38,750 ở run 3), Checksum thay đổi sau mỗi lần chạy, xuất hiện hàng nghìn ticket bị lặp. |
 | **Nguyên nhân** | Bảng `gold_training_set` là bảng thực thể (Grain: 1 hàng / 1 `ticket_id`), nhưng model dbt incremental thiếu `unique_key`, khiến dbt mặc định dùng chiến lược `append` (INSERT INTO). Nguồn CDC có bản ghi cập nhật (`op = 'u'`). Khi chạy qua các ngày hoặc khi re-run, bản ghi mới của ticket bị INSERT thêm vào bảng đích thay vì UPDATE/MERGE, dẫn đến 1 ticket bị nhân bản nhiều dòng. Ngoài ra, Airflow DAG để `catchup=True` và thiếu `max_active_runs=1` gây nguy cơ backfill dồn dập và ghi tranh chấp đồng thời. |
 | **Cách khắc phục** | - `dbt/models/gold/gold_training_set.sql`: Thêm `unique_key = 'ticket_id'` và `incremental_strategy = 'merge'` vào khối `config()`.<br>- `dags/ai_training_pipeline.py`: Cập nhật `catchup=False` và `max_active_runs=1`. |
@@ -72,7 +72,7 @@ Tổng kết: **4 / 4 tiêu chí đạt (Hoàn thành cả 2 bài mở rộng A 
 ## 2 · Bảng đặc trưng theo ngày thiếu hàng ở các ngày quá khứ
 
 | | |
-| --- | --- |
+|---|---|
 | **Triệu chứng** | Bảng `gold_feature_daily` bị thiếu khoảng 5% số hàng ở các ngày trong quá khứ đã chạy xong (thực tế chỉ có 8,645 / 9,100 hàng, thiếu 455 hàng). |
 | **P99 độ trễ đo được** | **2.73 ngày** *(Max = 2.94 ngày; tỷ lệ bản ghi trễ > 1 ngày là 5.05%)* |
 | **Lookback đã chọn** | **3 ngày** — vì P99 là 2.73 ngày và Max < 3 ngày, nên cửa sổ 3 ngày đủ bao trọn 100% các sự kiện đến muộn trong tập dữ liệu mà không tốn chi phí quét lại lịch sử quá dài. |
@@ -89,7 +89,7 @@ Vì sao chọn P99 làm căn cứ thay vì `max`? Chi phí của mỗi lựa ch�
 ## 3 · Kiểu dữ liệu cột priority thay đổi giữa chu kỳ
 
 | | |
-| --- | --- |
+|---|---|
 | **Triệu chứng** | Ngày 08-10 backend đổi cách ghi `priority` từ số sang chuỗi. Pipeline không báo lỗi, `dbt test` ban đầu vẫn pass, nhưng `silver_tickets.priority` có 6,606 dòng bị sai/NULL, bảng `quarantine_tickets` rỗng (0/312 hàng), model AI phân loại dự đoán kém hẳn. |
 | **Nguyên nhân** | Code ban đầu dùng `try_cast(priority_raw as integer)`, vừa biến các nhãn chữ hợp lệ (`urgent`, `high`,...) thành NULL (gây mất dữ liệu nghiêm trọng sau ngày 08-10), vừa cho lọt các giá trị số rác (`0, 5, -1`) vì chúng là integer. Đồng thời bảng `silver_tickets` xếp hạng `row_number()` trước khi lọc bỏ bản ghi rác khiến các ticket có bản ghi mới nhất bị lỗi sẽ mất sạch toàn bộ ticket. |
 | **Ba nhóm giá trị `priority` và cách xử lý từng nhóm** | **1. Số hợp lệ (`1, 2, 3, 4` - 6,846 dòng):** Ép kiểu `integer` và giữ nguyên.<br>**2. Nhãn chữ (`urgent, high, medium, low` - 7,142 dòng):** Mapping về số `1..4` tương ứng (`urgent`→1, `high`→2, `medium`→3, `low`→4).<br>**3. Dữ liệu lỗi (`0, 5, -1, P1, P2, unknown, '', NULL` - 312 dòng):** Trả về `NULL` để chuyển sang bảng `quarantine_tickets`. |
@@ -106,18 +106,16 @@ Câu hỏi thiết kế: nên chặn ở tầng Bronze hay Silver? Vì sao **kh�
 ## 4 · *(mở rộng, không bắt buộc)* Bài trong EXTRA.md
 
 ### Bài A: Tối ưu Dashboard Query (Small-file problem & Partitioning)
-
 | | |
-| --- | --- |
+|---|---|
 | **Bài đã làm** | **Bài A & Bài B** |
 | **Nguyên nhân** | Thư mục `data/gold_events/` có 5,000 file Parquet nhỏ (vài chục KB). DuckDB đọc Parquet theo lô và làm tròn lên ~1,000 hàng/file khiến công quét bị thổi phồng lên 5,000,000 rows scanned cho dataset chỉ có 130,683 dòng. Thêm vào đó, predicate `strftime(event_time, '%Y-%m-%d') = '2026-08-09'` là non-sargable khiến engine không thể tận dụng metadata min/max để prune file. |
 | **Cách khắc phục** | - `tools/compact.py`: Dùng `COPY ... TO` gom 5,000 file thành 14 file partition theo ngày (`partition_by (event_date)`), sắp xếp `ORDER BY customer_name, event_time` và đặt `ROW_GROUP_SIZE 10000`.<br>- `queries/dashboard.sql`: Đọc từ `data/gold_events_v2/*/*.parquet` với `hive_partitioning = 1` và sargable filter `event_date = '2026-08-09'`. |
 | **Bằng chứng** | `rows scanned`: giảm từ 5,000,000 ➔ **140,308** (giảm **35.6×**, vượt xa yêu cầu ≥ 10×) · số file: 5,000 ➔ **14 file** · thời gian chạy: 76,526 ms ➔ **11.2 ms** · result hash: `4379e4c5d9f3` (không đổi). |
 
 ### Bài B: Consumer gặp sự cố giữa batch (Delivery semantics)
-
 | | |
-| --- | --- |
+|---|---|
 | **Nguyên nhân** | Ngữ nghĩa At-most-once ban đầu: Consumer commit offset trước khi ghi dữ liệu vào database. Khi tiến trình bị `kill -9` ở batch 7, offset đã tăng lên 3,500 nhưng dữ liệu batch 7 chưa vào DB, dẫn đến khi restart bị mất trắng 500 bản ghi. |
 | **Cách khắc phục** | - `ingest/consumer.py`: Đổi sang ngữ nghĩa At-least-once bằng cách đảo thứ tự: ghi dữ liệu (`write_batch`) trước, commit offset sau.<br>- Thêm `PRIMARY KEY (event_id)` vào DDL bảng `bronze_events_stream`.<br>- Viết câu lệnh ghi Idempotent: `INSERT INTO ... ON CONFLICT (event_id) DO UPDATE SET ...` để khi replay batch 7, các bản ghi sẽ ghi đè cập nhật thay vì nhân đôi. |
 | **Bằng chứng** | `make crash-test` vượt qua hoàn hảo: không mất bản ghi (✓), không trùng bản ghi (✓), C == A = 20,000 hàng (`BÀI MỞ RỘNG B: ĐẠT ✓`). |
@@ -127,7 +125,7 @@ Câu hỏi thiết kế: nên chặn ở tầng Bronze hay Silver? Vì sao **kh�
 ## 5 · Tổng kết
 
 | Nhiệm vụ | Khi tiếp nhận một hệ thống chưa quen, tôi sẽ kiểm tra điều này trước tiên |
-| --- | --- |
+|---|---|
 | 1 | Kiểm tra Grain của bảng, xem dữ liệu nguồn có phát sinh update (CDC) hay không, và kiểm tra model incremental đã khai báo `unique_key` + `incremental_strategy = 'merge'` chưa, kết hợp cấu hình `catchup=False` và `max_active_runs=1` trên orchestrator. |
 | 2 | Đo đạc phân bố độ trễ giữa event time và ingestion time (đặc biệt là chỉ số phân vị P99) để xác định Lookback window tối ưu, đồng thời khai báo Composite Unique Key khi nới window để tránh duplicate khi tính lại ngày cũ. |
 | 3 | Kiểm tra Data Contract (schema enforcement) và dbt tests (accepted_values, not_null), đồng thời thiết lập cơ chế Dead-Letter Queue / Quarantine table để định tuyến dữ liệu lỗi mà không làm dừng pipeline của toàn hệ thống. |

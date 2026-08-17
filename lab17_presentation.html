@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 17 — Data Pipeline Engineering Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --border-color: #e2e8f0;
+            --border-accent: #0284c7;
+            
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            
+            --color-blue: #0284c7;
+            --color-green: #059669;
+            --color-red: #e11d48;
+            --color-purple: #7c3aed;
+            --color-amber: #d97706;
+            
+            --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.55;
+            padding: 2.5rem 1.5rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header.deck-header {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+        }
+
+        .header-title p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .meta-author {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-info {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        /* Section Layout */
+        section.slide {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 2rem 2.25rem;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow-card);
+        }
+
+        .slide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 0.85rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .slide-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        /* 4-Pillar Grid (Triệu chứng - Nguyên nhân - Giải pháp - Bằng chứng) */
+        .pillar-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .pillar-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .pillar-card.symptom {
+            border-left: 4px solid var(--color-amber);
+            background: #fffbeb;
+            border-color: #fef3c7;
+        }
+
+        .pillar-card.root-cause {
+            border-left: 4px solid var(--color-red);
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .pillar-card.solution {
+            border-left: 4px solid var(--color-blue);
+            background: #f0f9ff;
+            border-color: #e0f2fe;
+        }
+
+        .pillar-card.evidence {
+            border-left: 4px solid var(--color-green);
+            background: #f0fdf4;
+            border-color: #dcfce7;
+        }
+
+        .pillar-label {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .pillar-card.symptom .pillar-label { color: #b45309; }
+        .pillar-card.root-cause .pillar-label { color: #be123c; }
+        .pillar-card.solution .pillar-label { color: #0369a1; }
+        .pillar-card.evidence .pillar-label { color: #15803d; }
+
+        .pillar-content {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .pillar-content ul {
+            padding-left: 1.2rem;
+            margin-top: 0.25rem;
+        }
+
+        .pillar-content li {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Metrics Row */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            text-align: center;
+        }
+
+        .metric-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .metric-num {
+            font-size: 1.35rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.2rem;
+        }
+
+        .metric-desc {
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-top: 0.15rem;
+        }
+
+        .text-green { color: var(--color-green); }
+        .text-red { color: var(--color-red); }
+        .text-blue { color: var(--color-blue); }
+
+        /* Code Box */
+        pre.code-box {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            line-height: 1.5;
+            margin-top: 0.75rem;
+        }
+
+        .kwd { color: #f472b6; font-weight: 600; }
+        .fn { color: #38bdf8; }
+        .str { color: #4ade80; }
+        .com { color: #94a3b8; font-style: italic; }
+
+        /* Tables */
+        table.deck-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+        }
+
+        table.deck-table th, table.deck-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table.deck-table th {
+            background: var(--bg-subtle);
+            font-weight: 700;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .pillar-grid, .metrics-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <header class="deck-header">
+            <div class="header-title">
+                <h1>LAB 17: Data Pipeline Engineering</h1>
+                <p>Tổng hợp phân tích nguyên nhân gốc rễ & giải pháp kỹ thuật chuyên sâu</p>
+            </div>
+            <div class="header-meta">
+                <div class="meta-author">Lưu Xuân Dũng</div>
+                <div>Lớp: E403 - Track 2 | 17/08/2026</div>
+                <div style="margin-top: 0.35rem;">
+                    <span class="badge badge-success">4/4 Tiêu chí Đạt (100%)</span>
+                    <span class="badge badge-info">+10đ Extra A & B</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Slide 1: Medallion Architecture -->
+        <section class="slide">
+            <div class="slide-header">
+                <div class="slide-title">1. Tổng Quan Kiến Trúc Medallion</div>
+                <span class="badge badge-info">3 Tầng Dữ Liệu</span>
+            </div>
+
+            <table class="deck-table">
+                <thead>
+                    <tr>
+                        <th>Tầng (Layer)</th>
+                        <th>Nguồn Dữ Liệu / Bảng</th>
+                        <th>Số Lượng Bản Ghi</th>
+                        <th>Mục Đích & Đặc Điểm Kỹ Thuật</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong style="color: #b45309;">Bronze (Raw)</strong></td>
+                        <td class="mono">bronze_tickets_cdc<br>bronze_events<br>bronze_transcripts</td>
+                        <td class="mono">14,300 CDC<br>130,683 logs<br>5,200 files</td>
+                        <td>Kho thô nguyên vẹn (Single Source of Truth), lưu trữ đúng định dạng gốc từ Postgres CDC, Kafka topic và S3 JSON.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color: #64748b;">Silver (Clean)</strong></td>
+                        <td class="mono">silver_tickets<br>quarantine_tickets<br>silver_events</td>
+                        <td class="mono">12,480 tickets<br>312 lỗi cách ly<br>130,683 dedup</td>
+                        <td>Làm sạch kiểu dữ liệu, khử trùng lặp (dedup), ép chuẩn Data Contract và chuyển bản ghi lỗi vào bảng Quarantine.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color: var(--color-blue);">Gold (Serving)</strong></td>
+                        <td class="mono">gold_training_set<br>gold_feature_daily<br>gold_doc_chunks</td>
+                        <td class="mono">12,480 hàng<br>9,100 hàng<br>31,200 chunks</td>
+                        <td>Bảng tinh chế phân phối cho 3 mô hình AI: Model phân loại ticket, Routing Agent định tuyến và RAG Knowledge Base.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Slide 2: Task 1 -->
+        <section class="slide">
+            <div class="slide-header">
+                <div class="slide-title">2. Nhiệm Vụ 1: Tính Idempotent Bảng Training (`gold_training_set`)</div>
+                <span class="badge badge-success">Hoàn Thành (12,480 Rows)</span>
+            </div>
+
+            <div class="pillar-grid">
+                <div class="pillar-card symptom">
+                    <div class="pillar-label">Triệu Chứng Thực Tế</div>
+                    <div class="pillar-content">
+                        Khi chạy lại pipeline hoặc bấm <strong>Clear Task</strong> trên Airflow, số dòng của <code>gold_training_set</code> tăng liên tục sau mỗi lần chạy (12,480 ➔ 13,790 ➔ <strong>38,750</strong> hàng ở lượt 3), checksum bị thay đổi và 1 ticket bị nhân bản nhiều dòng.
+                    </div>
+                </div>
+
+                <div class="pillar-card root-cause">
+                    <div class="pillar-label">Nguyên Nhân Gốc Rễ</div>
+                    <div class="pillar-content">
+                        Bảng thực thể (Grain: 1 hàng / 1 <code>ticket_id</code>) nhưng model incremental thiếu <code>unique_key</code>, khiến dbt mặc định dùng chiến lược <strong>append (INSERT INTO)</strong>. Khi nguồn CDC có update (<code>op='u'</code>) hoặc re-run, bản ghi mới bị chèn thêm thay vì ghi đè.
+                    </div>
+                </div>
+
+                <div class="pillar-card solution">
+                    <div class="pillar-label">Giải Pháp Kỹ Thuật</div>
+                    <div class="pillar-content">
+                        <ul>
+                            <li>Trong <code>dbt/models/gold/gold_training_set.sql</code>: Thêm <code>unique_key = 'ticket_id'</code> và <code>incremental_strategy = 'merge'</code>.</li>
+                            <li>Trong <code>dags/ai_training_pipeline.py</code>: Thiết lập <code>catchup=False</code> và <code>max_active_runs=1</code> để ngăn chặn backfill dồn dập.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pillar-card evidence">
+                    <div class="pillar-label">Bằng Chứng Trước & Sau</div>
+                    <div class="pillar-content">
+                        <ul>
+                            <li><strong>Số hàng:</strong> Trước: 38,750 (thừa 26,270 hàng lặp) ➔ Sau: <strong>12,480 / 12,480 hàng chuẩn</strong>.</li>
+                            <li><strong>Checksum 3 lượt:</strong> <code>8dd7c98653</code> đồng nhất 100% qua cả 3 lần chạy liên tiếp.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <pre class="code-box">{{ config(
+    materialized         = <span class="str">'incremental'</span>,
+    unique_key           = <span class="str">'ticket_id'</span>,
+    incremental_strategy = <span class="str">'merge'</span>
+) }}</pre>
+        </section>
+
+        <!-- Slide 3: Task 2 -->
+        <section class="slide">
+            <div class="slide-header">
+                <div class="slide-title">3. Nhiệm Vụ 2: Dữ Liệu Đến Muộn (`gold_feature_daily`)</div>
+                <span class="badge badge-success">Hoàn Thành (9,100 Rows)</span>
+            </div>
+
+            <div class="pillar-grid">
+                <div class="pillar-card symptom">
+                    <div class="pillar-label">Triệu Chứng Thực Tế</div>
+                    <div class="pillar-content">
+                        Bảng <code>gold_feature_daily</code> bị thiếu ~5% số hàng ở các ngày trong quá khứ đã chạy xong (thực tế chỉ có 8,645 / 9,100 hàng, thiếu mất 455 hàng).
+                    </div>
+                </div>
+
+                <div class="pillar-card root-cause">
+                    <div class="pillar-label">Nguyên Nhân Gốc Rễ</div>
+                    <div class="pillar-content">
+                        Điều kiện incremental ban đầu <code>where event_date &gt; (select max(event_date) from target)</code> loại bỏ hoàn toàn các event phát sinh ở ngày cũ nhưng do độ trễ mạng nên được nạp vào kho muộn sau ngày đó.
+                    </div>
+                </div>
+
+                <div class="pillar-card solution">
+                    <div class="pillar-label">Giải Pháp Kỹ Thuật</div>
+                    <div class="pillar-content">
+                        <ul>
+                            <li>Đo đạc độ trễ phân vị: <strong>P99 = 2.73 ngày</strong> (Max = 2.94 ngày) ➜ Chọn <strong>Lookback window = 3 ngày</strong>.</li>
+                            <li>Nới window: <code>event_date &gt;= max(event_date) - interval 3 day</code>.</li>
+                            <li>Khai báo Composite Key: <code>unique_key = ['event_date', 'customer_id']</code> và <code>incremental_strategy = 'merge'</code>.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pillar-card evidence">
+                    <div class="pillar-label">Bằng Chứng Trước & Sau</div>
+                    <div class="pillar-content">
+                        <ul>
+                            <li><strong>Số hàng:</strong> Trước: 8,645 ➔ Sau: <strong>9,100 / 9,100 hàng</strong> (khớp 14 ngày × 650 customer).</li>
+                            <li><strong>Checksum 3 lượt:</strong> <code>3db448685c</code> ổn định tuyệt đối.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metrics-row">
+                <div class="metric-box">
+                    <div class="metric-title">P99 Độ Trễ Đo Được</div>
+                    <div class="metric-num text-blue">2.73 ngày</div>
+                    <div class="metric-desc">5.05% log trễ &gt; 1 ngày</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-title">Lookback Window Đã Chọn</div>
+                    <div class="metric-num text-green">3 ngày</div>
+                    <div class="metric-desc">Bao trọn 100% late data</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-title">Tại Sao Dùng P99 Thay Vì Max?</div>
+                    <div class="metric-desc" style="text-align: left; font-size: 0.75rem; margin-top: 0.25rem;">
+                        Max có thể bị phình to bởi vài outlier (log thiết bị mất sóng cả tháng). P99 tối ưu chi phí tính toán cố định mỗi ngày.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Task 3 -->
+        <section class="slide">
+            <div class="slide-header">
+                <div class="slide-title">4. Nhiệm Vụ 3: Data Contract & Bảng Cách Ly (`quarantine_tickets`)</div>
+                <span class="badge badge-success">Hoàn Thành (312 Lỗi Cách Ly)</span>
+            </div>
+
+            <div class="pillar-grid">
+                <div class="pillar-card symptom">
+                    <div class="pillar-label">Triệu Chứng Thực Tế</div>
+                    <div class="pillar-content">
+                        Ngày 08-10 backend đổi định dạng `priority` sang chuỗi. Code dùng <code>try_cast</code> làm mất 6,606 dòng thành NULL, bảng Quarantine rỗng (0 hàng), model AI phân loại dự đoán sai lệch nghiêm trọng.
+                    </div>
+                </div>
+
+                <div class="pillar-card root-cause">
+                    <div class="pillar-label">Nguyên Nhân Gốc Rễ</div>
+                    <div class="pillar-content">
+                        <code>try_cast(priority_raw as int)</code> vừa xoá mất nhãn chữ hợp lệ (<code>urgent</code>, <code>high</code>...), vừa cho lọt các số rác (<code>0</code>, <code>5</code>, <code>-1</code>). Đồng thời thứ tự xếp hạng <code>row_number()</code> trước khi lọc làm mất toàn bộ ticket nếu bản ghi mới nhất bị lỗi.
+                    </div>
+                </div>
+
+                <div class="pillar-card solution">
+                    <div class="pillar-label">Giải Pháp Kỹ Thuật</div>
+                    <div class="pillar-content">
+                        <ul>
+                            <li>Viết macro <code>normalize_priority.sql</code>: Chuẩn hoá 3 nhóm (Số 1..4, Map chuỗi <code>urgent..low</code> ➜ 1..4, Rác ➜ NULL).</li>
+                            <li>Trong <code>silver_tickets.sql</code>: Lọc rác <strong>trước</strong> khi <code>row_number()</code>.</li>
+                            <li>Trong <code>schema.yml</code>: Bật <code>contract: enforced: true</code> và test <code>accepted_values: [1..4]</code>.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pillar-card evidence">
+                    <div class="pillar-label">Bằng Chứng Trước & Sau</div>
+                    <div class="pillar-content">
+                        <ul>
+                            <li><strong>Quarantine:</strong> Đầy đủ chính xác <strong>312 / 312 bản ghi lỗi</strong>.</li>
+                            <li><strong>Silver Tickets:</strong> 12,480 hàng sạch 100% (priority ∈ 1..4, không NULL).</li>
+                            <li><strong>dbt test:</strong> Vượt qua <strong>11 / 11 tests</strong>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <table class="deck-table">
+                <thead>
+                    <tr>
+                        <th>Nhóm Giá Trị</th>
+                        <th>Mẫu Dữ Liệu</th>
+                        <th>Số Lượng</th>
+                        <th>Bản Chất</th>
+                        <th>Xử Lý Kỹ Thuật</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Nhóm 1: Số hợp lệ</strong></td>
+                        <td class="mono">'1', '2', '3', '4'</td>
+                        <td class="mono">6,846</td>
+                        <td>Đúng chuẩn cũ</td>
+                        <td>Ép kiểu <code>integer</code> và giữ nguyên</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nhóm 2: Nhãn chữ</strong></td>
+                        <td class="mono">'urgent', 'high', 'medium', 'low'</td>
+                        <td class="mono">7,142</td>
+                        <td>Schema Evolution từ 08-10</td>
+                        <td>Map về số: urgent=1, high=2, medium=3, low=4</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nhóm 3: Dữ liệu rác</strong></td>
+                        <td class="mono">'0', '5', '-1', 'P1', 'unknown', NULL</td>
+                        <td class="mono">312</td>
+                        <td>Vi phạm hợp đồng</td>
+                        <td>Trả về <code>NULL</code> ➜ Cách ly vào <code>quarantine_tickets</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Slide 5: Extra Tasks -->
+        <section class="slide">
+            <div class="slide-header">
+                <div class="slide-title">5. Hai Bài Mở Rộng (EXTRA A & EXTRA B)</div>
+                <span class="badge badge-info">+10 Điểm Thưởng</span>
+            </div>
+
+            <!-- Extra A -->
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--color-purple); margin-bottom: 0.75rem;">
+                    Bài A: Tối Ưu Small-File Problem Cho Dashboard Query
+                </h3>
+                <div class="pillar-grid">
+                    <div class="pillar-card root-cause">
+                        <div class="pillar-label">Triệu Chứng & Nguyên Nhân</div>
+                        <div class="pillar-content">
+                            Dashboard CSKH mất 38s (trên máy chậm mất 76s). Nguyên nhân do <strong>5,000 file Parquet nhỏ</strong> khiến engine phải quét 5,000,000 đơn vị công quét. Thêm vào đó, predicate <code>strftime()</code> là non-sargable khiến engine không prune được file.
+                        </div>
+                    </div>
+                    <div class="pillar-card evidence">
+                        <div class="pillar-label">Giải Pháp & Bằng Chứng Tối Ưu</div>
+                        <div class="pillar-content">
+                            Dùng <code>tools/compact.py</code> gom 5,000 file thành 14 file partition theo <code>event_date</code>, sắp xếp <code>ORDER BY customer_name, event_time</code>.<br>
+                            ➜ <strong>Rows scanned:</strong> Giảm từ 5,000,000 ➔ <strong>140,308 (giảm 35.6×)</strong>.<br>
+                            ➜ <strong>Thời gian:</strong> Giảm từ 76,526 ms ➔ <strong>11.2 ms</strong> (nhanh gấp ~7,000 lần).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extra B -->
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--color-purple); margin-bottom: 0.75rem;">
+                    Bài B: Xử Lý Sự Cố Consumer Bị Sập Nguồn Giữa Batch (Crash Test)
+                </h3>
+                <div class="pillar-grid">
+                    <div class="pillar-card root-cause">
+                        <div class="pillar-label">Triệu Chứng & Nguyên Nhân (At-Most-Once)</div>
+                        <div class="pillar-content">
+                            Khi bị <code>kill -9</code> ở batch 7, consumer ban đầu commit offset trước khi ghi vào DB. Khi restart, consumer đọc từ offset mới ➜ <strong>Mất trắng 500 bản ghi</strong> (19,500 / 20,000 hàng).
+                        </div>
+                    </div>
+                    <div class="pillar-card evidence">
+                        <div class="pillar-label">Giải Pháp & Bằng Chứng (At-Least-Once + Idempotency)</div>
+                        <div class="pillar-content">
+                            Đảo thứ tự: <strong>Ghi dữ liệu trước, commit offset sau</strong>. Thêm <code>PRIMARY KEY (event_id)</code> và dùng câu lệnh ghi Idempotent <code>INSERT INTO ... ON CONFLICT (event_id) DO UPDATE SET ...</code>.<br>
+                            ➜ <strong>Kết quả crash test:</strong> 20,000 / 20,000 hàng, không mất, không trùng (<strong>ĐẠT ✓</strong>).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: Summary Table -->
+        <section class="slide">
+            <div class="slide-header">
+                <div class="slide-title">6. Bảng Tổng Kết Kết Quả Kiểm Thử (`make verify`)</div>
+                <span class="badge badge-success">4/4 Tiêu Chí Đạt Tuyệt Đối</span>
+            </div>
+
+            <table class="deck-table">
+                <thead>
+                    <tr>
+                        <th>Hạng Mục Kiểm Tra</th>
+                        <th>Trạng Thái</th>
+                        <th>Số Lượng Hàng</th>
+                        <th>Kỳ Vọng</th>
+                        <th>Checksum Đồng Nhất 3 Lượt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong class="mono">gold_training_set</strong></td>
+                        <td class="text-green font-bold">✓ ok (Idempotent)</td>
+                        <td class="mono">12,480</td>
+                        <td class="mono">12,480</td>
+                        <td class="mono text-blue">8dd7c98653</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="mono">gold_feature_daily</strong></td>
+                        <td class="text-green font-bold">✓ ok (Đủ late data)</td>
+                        <td class="mono">9,100</td>
+                        <td class="mono">9,100</td>
+                        <td class="mono text-blue">3db448685c</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="mono">gold_doc_chunks</strong></td>
+                        <td class="text-green font-bold">✓ ok (Đối chứng)</td>
+                        <td class="mono">31,200</td>
+                        <td class="mono">31,200</td>
+                        <td class="mono text-blue">92d8e50131</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="mono">quarantine_tickets</strong></td>
+                        <td class="text-green font-bold">✓ ok (Cách ly đúng)</td>
+                        <td class="mono">312</td>
+                        <td class="mono">312</td>
+                        <td class="mono text-blue">ebb89036fb</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="mono">dbt test suite</strong></td>
+                        <td class="text-green font-bold">✓ 11/11 pass</td>
+                        <td colspan="3">Data Contract enforced (integer) + accepted_values [1..4]</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="mono">Dashboard Query (Extra A)</strong></td>
+                        <td class="text-green font-bold">✓ Đạt (+5đ)</td>
+                        <td colspan="3">Rows scanned: 5,000,000 ➔ 140,308 (giảm 35.6×, thời gian 11.2ms)</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="mono">Consumer Crash (Extra B)</strong></td>
+                        <td class="text-green font-bold">✓ Đạt (+5đ)</td>
+                        <td colspan="3">At-least-once + Idempotent Write: 20,000 / 20,000 hàng chuẩn xác</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </div>
+
+</body>
+</html>

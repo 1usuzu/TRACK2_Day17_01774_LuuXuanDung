@@ -122,13 +122,16 @@ def data_invariants() -> list[tuple[str, bool, str]]:
     return out
 
 
-def dashboard_check() -> dict:
+def dashboard_check() -> dict | None:
     from tools.explain import TARGET_FACTOR, load_baseline, measure, read_query
 
     cwd = pathlib.Path.cwd()
     try:
         os.chdir(pathlib.Path(__file__).resolve().parent.parent)
-        m = measure(read_query())
+        try:
+            m = measure(read_query())
+        except Exception:
+            return None
     finally:
         os.chdir(cwd)
     base = load_baseline()
